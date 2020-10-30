@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+import argparse
+
+from services.src.organization import Organization
+
+COMMANDS = [method_name for method_name in dir(Organization)
+            if not method_name.startswith('_') and callable(getattr(
+                Organization, method_name))]
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    for name in COMMANDS:
+        group.add_argument(
+            f"--{name.replace('_', '-')}", action='store_true')
+    args = parser.parse_args()
+    for name in COMMANDS:
+        if getattr(args, name):
+            command = getattr(Organization(), name)
+            command()
+            break

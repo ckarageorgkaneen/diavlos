@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+import pickle
+from pprint import pprint
+from services.data import INOUT_FILES
+with open(INOUT_FILES['org_all'], 'rb') as f:
+    pprint(pickle.load(f))
