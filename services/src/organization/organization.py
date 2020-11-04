@@ -27,6 +27,11 @@ def _error(message):
     raise OrganizationError(message)
 
 
+def _cli_command(func):
+    func.is_cli_command = True
+    return func
+
+
 def _pickle(data, file):
     with open(file, 'wb') as handle:
         pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -342,6 +347,7 @@ class Organization:
         page = self._get_site_page(f'{self.NAMESPACE}:{name}')
         _add_text_to_page(page, self.CATALOGUE_CATEGORY)
 
+    @_cli_command
     def recreate_tree(self):
         logger.debug('Creating organization category tree and pages...')
         for parent, children in self._hierarchy().items():
@@ -352,6 +358,7 @@ class Organization:
                     child, parent_category=parent_category)
         logger.debug('Done.')
 
+    @_cli_command
     def nuke_tree(self):
         logger.debug('Nuking organization category tree and pages...')
 
@@ -377,6 +384,7 @@ class Organization:
             recurse_delete(page)
         logger.debug('Done.')
 
+    @_cli_command
     def update_pages(self):
         logger.debug('Updating organization pages...')
 

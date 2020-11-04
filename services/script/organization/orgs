@@ -3,9 +3,12 @@ import argparse
 
 from services.src.organization import Organization
 
-COMMANDS = [method_name for method_name in dir(Organization)
-            if not method_name.startswith('_') and callable(getattr(
-                Organization, method_name))]
+COMMANDS = {}
+for attr_name in dir(Organization):
+    attr_obj = getattr(Organization, attr_name)
+    if not attr_name.startswith('_') and callable(attr_obj) and hasattr(
+            attr_obj, 'is_cli_command'):
+        COMMANDS[attr_name] = attr_obj
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -14,7 +17,7 @@ if __name__ == '__main__':
         group.add_argument(
             f"--{name.replace('_', '-')}", action='store_true')
     args = parser.parse_args()
-    for name in COMMANDS:
+    for name, command in COMMANDS.items():
         if getattr(args, name):
             command = getattr(Organization(), name)
             command()
