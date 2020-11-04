@@ -102,6 +102,8 @@ class Organization:
     # API
     API_BASE_URL = 'https://hr.apografi.gov.gr/api'
     ORGS_ENDPOINT = f'{API_BASE_URL}/public/organizations'
+    ORGS_TREE_URL_PREFIX = \
+        f'{API_BASE_URL}/public/organization-tree?organizationCode='
     SEARCH_ORG_ENDPOINT = f'{ORGS_ENDPOINT}/search'
     DICT_ENDPOINT = f'{API_BASE_URL}/public/metadata/dictionary'
     PURPOSES_DICT_ENDPOINT = f'{DICT_ENDPOINT}/Functions'
@@ -202,6 +204,15 @@ class Organization:
             }
             code = self.__code_by_name.get(name)
         return code
+
+    def _tree_by_code(self, code):
+        orgs_tree_url = f'{self.ORGS_TREE_URL_PREFIX}{code}'
+        try:
+            tree_dict = requests.get(orgs_tree_url).json()['data']
+        except Exception:
+            logger.error(f'Failed to request {orgs_tree_url}.')
+            tree_dict = None
+        return tree_dict
 
     def _get_site_page(self, name, is_category=False):
         try:
@@ -421,3 +432,25 @@ class Organization:
                 page.edit(new_page_text)
                 logger.debug(f'{page.name} updated')
         logger.debug('Done.')
+
+    def units(self, name, unit_types=None):
+        units = []
+
+        def add_sub_unit(unit):
+            children = unit.get('children')
+            if children is not None:
+                for child in children:
+                    add_sub_unit(child)
+                del unit['children']
+            units.append(unit)
+        org_code = self._code_by_name(name)
+        if org_code is not None:
+            org_tree = self._tree_by_code(org_code)
+            if org_tree is not None:
+                for org in org_tree.get('children', []):
+                    add_sub_unit(org)
+            if unit_types is not None:
+                units = [unit for unit in units
+                         if unit['unitType'] in unit_types]
+        success, result = True, units
+        return success, result

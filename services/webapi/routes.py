@@ -11,9 +11,11 @@ from services.webapi import auth
 
 from services.src.service import Service
 from services.src.eparavolo import eParavolo
+from services.src.organization import Organization
 
 service = Service()
 eparavolo = eParavolo()
+organization = Organization()
 
 
 add_schema = {
@@ -179,3 +181,25 @@ def paravolo(code: int):
         'result': result
     }
     return jsonify(response), code
+
+
+@app.route("/api/public/organization/units")
+def organization_units():
+    name = request.args.get('name')
+    unit_types = request.args.get('unit_types')
+    if unit_types is not None:
+        try:
+            unit_types = [int(unit_type)
+                          for unit_type in unit_types.split(',')]
+        except ValueError:
+            unit_types = None
+    print(f'unit_types: {unit_types}')
+    if name:
+        success, result = organization.units(name, unit_types=unit_types)
+    else:
+        success, result = False, 'Υποχρεωτική παράμετρος: name'
+    response = {
+        'success': success,
+        'result': result
+    }
+    return jsonify(response), 200
