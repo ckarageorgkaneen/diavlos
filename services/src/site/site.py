@@ -19,7 +19,7 @@ def _error(message):
 
 class Site:
     _URL = 'diadikasies.dev.grnet.gr'
-    _SCHEME = 'http'
+    _SCHEME = 'https'
     _PATH = '/'
     _CREDENTIALS_FILE = IN_FILES['site_credentials']
 
