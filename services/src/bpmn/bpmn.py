@@ -19,7 +19,7 @@ class BPMNNamespaces:
 class BPMN:
 
   PROCESS_STEPS = None
-  PROCESS_STEP_DESCRIPTION = None
+  PROCESS_STEP_TITLE = None
   PROCESS_STEP_CHILD = None
   PROCESS_STEP_PREVIOUS_CHILD = None
   PROCESS_STEPS_DIGITAL = None
@@ -94,8 +94,8 @@ class BPMN:
       process_steps += f' {digital_str}'
     digital_infix = f'_{digital_str}' if digital_steps else ''
     self.PROCESS_STEPS = process_steps
-    self.PROCESS_STEP_DESCRIPTION = \
-        f'process_step{digital_infix}_description'
+    self.PROCESS_STEP_TITLE = \
+        f'process_step{digital_infix}_title'
     self.PROCESS_STEP_CHILD = f'process_step{digital_infix}_child'
     self.PROCESS_STEP_PREVIOUS_CHILD = f'process_step_previous{digital_infix}_child'
 
@@ -148,8 +148,8 @@ class BPMN:
     # parse the process steps and either add plainEventNodes, or put the branchNodes in a list and handle them when the first plainEventNode appears
     for step_num, step in self._process_steps.items():
       stepcount += 1
-      if step.get(self.PROCESS_STEP_DESCRIPTION) is not None:
-        stepname = step.get(self.PROCESS_STEP_DESCRIPTION)
+      if step.get(self.PROCESS_STEP_TITLE) is not None:
+        stepname = step.get(self.PROCESS_STEP_TITLE)
         stepid = str(hash(stepname))
         # print('***',stepcount, step.get(self.PROCESS_STEP_CHILD))
         if step.get(self.PROCESS_STEP_CHILD) == 'Ναι':
@@ -181,7 +181,7 @@ class BPMN:
     # print('==>' + str(len(options)))
     process_steps = self._process_steps
     stepname = process_steps[stepcount - 1].get(
-        self.PROCESS_STEP_DESCRIPTION)
+        self.PROCESS_STEP_TITLE)
 
     # if no BranchNodes are found
     if len(options) == 0:
@@ -266,7 +266,7 @@ class BPMN:
           id='Subtask_' + str(
               stepcount - len(options)) + '_' + str(
               subchaincount) + '_1',
-          name=step.get(self.PROCESS_STEP_DESCRIPTION),
+          name=step.get(self.PROCESS_STEP_TITLE),
           nsmap=self._ns.NSMAP)
       # set the current task as the last task of the chain
       lastTask = subTask
@@ -310,7 +310,7 @@ class BPMN:
       subTask = etree.SubElement(
           process, self._ns.semantic + "task",
           id='Subtask_' + curr_id,
-          name=step.get(self.PROCESS_STEP_DESCRIPTION),
+          name=step.get(self.PROCESS_STEP_TITLE),
           nsmap=self._ns.NSMAP)
       outgoing = etree.SubElement(
           lastTask, self._ns.semantic + "outgoing", nsmap=self._ns.NSMAP)
@@ -602,7 +602,7 @@ class BPMN:
     totalbranched = len(options)
     maxBranchLenght = 0
     stepname = self._process_steps[
-        stepcount - 1].get(self.PROCESS_STEP_DESCRIPTION)
+        stepcount - 1].get(self.PROCESS_STEP_TITLE)
     boxHeightFactor = len(stepname) / 25
     if len(options) == 0:
         # print('Task_' + str(stepcount))
@@ -622,7 +622,7 @@ class BPMN:
       if planeHeight < 110 * boxHeightFactor:
         planeHeight = 110 * boxHeightFactor
       prevstepname = self._process_steps[
-          stepcount - 2].get(self.PROCESS_STEP_DESCRIPTION)
+          stepcount - 2].get(self.PROCESS_STEP_TITLE)
       prevstepid = str(hash(prevstepname))
       head = 'Task_'
       # edgeoffset = 100
@@ -715,8 +715,8 @@ class BPMN:
 
     for step_num, step in self._process_steps.items():
       stepcount += 1
-      if step.get(self.PROCESS_STEP_DESCRIPTION) is not None:
-        stepname = step.get(self.PROCESS_STEP_DESCRIPTION)
+      if step.get(self.PROCESS_STEP_TITLE) is not None:
+        stepname = step.get(self.PROCESS_STEP_TITLE)
         boxHeightFactor = len(stepname) / 25
         stepid = str(hash(stepname))
         if stepcount == 1:
