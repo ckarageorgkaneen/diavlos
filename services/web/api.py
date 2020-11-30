@@ -201,7 +201,6 @@ def organization_units():
                           for unit_type in unit_types.split(',')]
         except ValueError:
             unit_types = None
-    print(f'unit_types: {unit_types}')
     if name:
         result = organization.units(name, unit_types=unit_types)
     else:

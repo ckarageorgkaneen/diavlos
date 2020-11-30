@@ -15,8 +15,6 @@ class Error:
     def __call__(self, enum):
         message = self._dict[enum][self._MSG_KEY]
         status_code = self._dict[enum][self._STATUS_CODE_KEY]
-        print(message)
-        print(status_code)
         return message, status_code
 
     def add(self, enum, message, status_code):
