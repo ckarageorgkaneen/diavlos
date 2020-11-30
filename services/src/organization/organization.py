@@ -452,5 +452,5 @@ class Organization:
             if unit_types is not None:
                 units = [unit for unit in units
                          if unit['unitType'] in unit_types]
-        success, result = True, units
-        return success, result
+        result = units
+        return result

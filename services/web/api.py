@@ -3,14 +3,17 @@ import functools
 import jsonschema
 
 from flask import Flask
-from flask import Response
 from flask import jsonify
 from flask import request
 from flask_httpauth import HTTPBasicAuth
 
 from services.src.eparavolo import eParavolo
+from services.src.eparavolo.error import eParavoloError
+from services.src.eparavolo.error import eParavoloErrorCode
+from services.src.helper.error import ErrorCode
 from services.src.organization import Organization
 from services.src.service import Service
+from services.src.service.error import ServiceError
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -68,6 +71,8 @@ update_schema = {
     ]
 }
 
+VALIDATION_ERROR_MSG = 'Ακατάλληλο σχήμα json.'
+
 
 def validate_schema(schema):
     def decorator(func):
@@ -76,10 +81,10 @@ def validate_schema(schema):
             try:
                 jsonschema.validate(instance=request.json, schema=schema)
             except jsonschema.exceptions.ValidationError:
-                success = False
-                message = 'Ακατάλληλο σχήμα json.'
-                return success, message
-            return func(**request.json)
+                result = VALIDATION_ERROR_MSG
+            else:
+                result = func(**request.json)
+            return result
         return wrapper
     return decorator
 
@@ -87,20 +92,31 @@ def validate_schema(schema):
 def make_response(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        success, result_obj = func()
-        if isinstance(result_obj, Response):
-            return result_obj
-        try:
-            result = result_obj['message']
-            response_code = result_obj['code']
-        except (KeyError, TypeError):
-            result = result_obj
-            response_code = 200
-        response = {
-            'success': success,
-            'result': result
-        }
-        return jsonify(response), response_code
+        result = func(*args, **kwargs)
+        if isinstance(result, str):
+            response = {
+                'success': False,
+                'message': result
+            }
+            status_code = 400
+        elif isinstance(result, ErrorCode):
+            if isinstance(result, eParavoloErrorCode):
+                error_instance = eParavoloError
+            else:
+                error_instance = ServiceError
+            message, status_code = error_instance(result)
+            response = {
+                'success': False,
+                'message': message
+            }
+            status_code = status_code
+        else:
+            response = {
+                'success': True,
+                'result': result
+            }
+            status_code = 200
+        return jsonify(response), status_code
     return wrapper
 
 
@@ -140,16 +156,16 @@ def fetch_service():
         fetch_bpmn_digital_steps = None
     service_id = uuid or id_
     if name:
-        success, result = service.fetch_by_name(
+        result = service.fetch_by_name(
             name, fetch_bpmn_digital_steps=fetch_bpmn_digital_steps)
     elif service_id:
-        success, result = service.fetch_by_id(
+        result = service.fetch_by_id(
             id_=service_id,
             id_is_uuid=bool(uuid),
             fetch_bpmn_digital_steps=fetch_bpmn_digital_steps)
     else:
-        success, result = False, service.Error.REQUIRED_FETCH_PARAMS
-    return success, result
+        result = 'Υποχρεωτική παράμετρος: name ή uuid.'
+    return result
 
 
 @app.route("/api/public/service/add", methods=['POST'])
@@ -169,22 +185,13 @@ def update_service(name, fields):
 
 
 @app.route("/api/public/paravolo/<int:code>")
+@make_response
 def paravolo(code: int):
-    success, result_obj = eparavolo.fetch(code)
-    if 'message' in result_obj:
-        result = result_obj['message']
-        code = 200  # code = result_obj['code']
-    else:
-        result = result_obj
-        code = 200
-    response = {
-        'success': success,
-        'result': result
-    }
-    return jsonify(response), code
+    return eparavolo.fetch(code)
 
 
 @app.route("/api/public/organization/units")
+@make_response
 def organization_units():
     name = request.args.get('name')
     unit_types = request.args.get('unit_types')
@@ -196,11 +203,7 @@ def organization_units():
             unit_types = None
     print(f'unit_types: {unit_types}')
     if name:
-        success, result = organization.units(name, unit_types=unit_types)
+        result = organization.units(name, unit_types=unit_types)
     else:
-        success, result = False, 'Υποχρεωτική παράμετρος: name'
-    response = {
-        'success': success,
-        'result': result
-    }
-    return jsonify(response), 200
+        result = 'Υποχρεωτική παράμετρος: name'
+    return result

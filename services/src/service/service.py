@@ -2,6 +2,7 @@ import logging
 import mwclient
 import mwtemplates
 
+from .error import ServiceErrorCode as ErrorCode
 from services.src.site import Site
 from services.src.site import SiteError
 from services.src.bpmn import BPMN
@@ -23,40 +24,6 @@ class Service:
     UUID_PROPERTY_NAME = 'Process_uuid'
     ID_PROPERTY_NAME = 'Process_id'
     BPMN_PATH = 'BPMN'
-
-    class Error:
-        UNAUTHORIZED_ACTION = {
-            'message': 'Ο χρήστης δεν έχει επαρκή δικαίωματα.',
-            'code': 403
-        }
-        FETCH_ALL = {
-            'message': 'Πρόβλημα κατά τη φόρτωση των διαδικασιών.',
-            'code': 404
-        }
-        NOT_FOUND = {
-            'message': 'Η διαδικασία δε βρέθηκε.',
-            'code': 200
-        }
-        ALREADY_EXISTS = {
-            'message': 'Η διαδικασία υπάρχει ήδη.',
-            'code': 409
-        }
-        REQUIRED_FETCH_PARAMS = {
-            'message': 'Υποχρεωτική παράμετρος: name ή uuid.',
-            'code': 404
-        }
-        REQUIRED_UPDATE_KEYS = {
-            'message': 'Υποχρεωτικά κλειδιά: name, fields.',
-            'code': 404
-        }
-        NO_FIELD_UPDATED = {
-            'message': 'Δεν ενημερώθηκε κανένα πεδίο.',
-            'code': 404
-        }
-        FIELDS_NOT_PROPER = {
-            'message': 'To κλειδί fields πρέπει να περιέχει dictionary.',
-            'code': 404
-        }
 
     def __init__(self):
         self._site = Site()
@@ -125,8 +92,8 @@ class Service:
                                          cmtitle=self.CATEGORY,
                                          cmcontinue=continue_value,
                                          cmlimit=limit_value)
-        except mwclient.errors.APIError as e:
-            success, result = False, e.info
+        except mwclient.errors.APIError:
+            result = ErrorCode.SITE_API_ERROR
         else:
             if 'continue' in mw_response:
                 continue_response = mw_response['continue']['cmcontinue']
@@ -147,14 +114,14 @@ class Service:
                     for category_member in mw_response['query'][
                         'categorymembers']
                 ]
-            success, result = True, {
+            result = {
                 'continue': continue_response,
                 'services': services_data
             }
-        return success, result
+        return result
 
     def fetch_by_name(self, name, fetch_bpmn_digital_steps=None):
-        success, result = False, self.Error.NOT_FOUND
+        result = ErrorCode.NOT_FOUND
         page = self._site.pages[name]
         if page.exists:
             page = page.resolve_redirect()
@@ -169,8 +136,8 @@ class Service:
                         digital_steps=fetch_bpmn_digital_steps).xml(
                         service_dict).replace('\n', '').replace(
                         '\t', '').replace('\"', '\'')
-                success, result = bool(data), data
-        return success, result
+                result = data
+        return result
 
     def fetch_by_id(self, id_, id_is_uuid=False,
                     fetch_bpmn_digital_steps=None):
@@ -181,29 +148,29 @@ class Service:
             site_response = self._site.get(
                 'askargs', format='json',
                 conditions=askargs_conditions)
-        except mwclient.errors.APIError as e:
-            success, result = False, e.info
+        except mwclient.errors.APIError:
+            result = ErrorCode.SITE_API_ERROR
         else:
             site_response_results = site_response['query']['results']
             if len(site_response_results) == 1:
                 service_name = next(iter(site_response_results))
-                success, result = self.fetch_by_name(
+                result = self.fetch_by_name(
                     service_name,
                     fetch_bpmn_digital_steps=fetch_bpmn_digital_steps)
             else:
-                success, result = False, self.Error.NOT_FOUND
-        return success, result
+                result = ErrorCode.NOT_FOUND
+        return result
 
     def update(self, name, fields):
         page = self._site.pages[name]
         page_template_names = self._page_template_names(page)
         if not (page.exists and self._page_is_service(
                 page, page_template_names)):
-            success, result = False, self.Error.NOT_FOUND
+            result = ErrorCode.NOT_FOUND
         elif not page.can('edit'):
-            success, result = False, self.Error.UNAUTHORIZED_ACTION
+            result = ErrorCode.UNAUTHORIZED_ACTION
         elif not isinstance(fields, dict):
-            success, result = False, self.Error.FIELDS_NOT_PROPER
+            result = ErrorCode.FIELDS_NOT_PROPER
         else:
             te = mwtemplates.TemplateEditor(page.text())
             fields_updated = False
@@ -229,26 +196,26 @@ class Service:
             if fields_updated:
                 page.edit(te.wikitext())
             if fields_updated:
-                success, result = True, self._service_dict(
+                result = self._service_dict(
                     name, mwtemplates.TemplateEditor(page.text()))
             else:
-                success, result = False, self.Error.NO_FIELD_UPDATED
-        return success, result
+                result = ErrorCode.NO_FIELD_UPDATED
+        return result
 
     def add(self, name, fields):
         page = self._site.pages[name]
         if page.exists:
-            success, result = False, self.Error.ALREADY_EXISTS
+            result = ErrorCode.ALREADY_EXISTS
         elif not page.can('edit'):
-            success, result = False, self.Error.UNAUTHORIZED_ACTION
+            result = ErrorCode.UNAUTHORIZED_ACTION
         elif not isinstance(fields, dict):
-            success, result = False, self.Error.FIELDS_NOT_PROPER
+            result = ErrorCode.FIELDS_NOT_PROPER
         else:
             templates_text = self._templates_text(fields)
             te = mwtemplates.TemplateEditor(templates_text)
             if te.templates:
                 page.edit(te.wikitext())
-                success, result = True, self._service_dict(name, te)
+                result = self._service_dict(name, te)
             else:
-                success, result = False, self.Error.FIELDS_NOT_PROPER
-        return success, result
+                result = ErrorCode.FIELDS_NOT_PROPER
+        return result

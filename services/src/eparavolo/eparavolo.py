@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-import yaml
 import datetime
+import yaml
 import zeep
 
 from zeep.wsse.username import UsernameToken
 
+from .error import eParavoloErrorCode as ErrorCode
 from services.data import IN_FILES
 
 
@@ -29,12 +30,6 @@ class eParavolo:
 
     WSDL_URL = 'https://test.gsis.gr/esbpilot/eparavoloPublicService?wsdl'
 
-    class Error:
-        NOT_FOUND = {
-            'message': 'Δεν βρέθηκαν αποτελέσματα.',
-            'code': 404
-        }
-
     def __init__(self):
         self.__client = None
 
@@ -54,9 +49,9 @@ class eParavolo:
             **_request_data(code))
         output_record_obj = response_obj.getParavoloTypeInfoOutputRecord
         if output_record_obj is None:
-            success, result = False, self.Error.NOT_FOUND
+            result = ErrorCode.NOT_FOUND
         else:
             response_dict = zeep.helpers.serialize_object(output_record_obj)
             response_dict['price'] = int(response_dict['price'])
-            success, result = True, response_dict
-        return success, result
+            result = response_dict
+        return result
