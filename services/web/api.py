@@ -2,17 +2,18 @@ import functools
 
 import jsonschema
 
+from flask import Flask
 from flask import Response
 from flask import jsonify
 from flask import request
+from flask_httpauth import HTTPBasicAuth
 
-from services.webapi import app
-from services.webapi import auth
-
-from services.src.service import Service
 from services.src.eparavolo import eParavolo
 from services.src.organization import Organization
+from services.src.service import Service
 
+app = Flask(__name__)
+auth = HTTPBasicAuth()
 service = Service()
 eparavolo = eParavolo()
 organization = Organization()
