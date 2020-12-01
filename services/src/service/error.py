@@ -9,7 +9,7 @@ class ServiceErrorCode(ErrorCode):
     ALREADY_EXISTS = 4
     REQUIRED_UPDATE_KEYS = 5
     NO_FIELD_UPDATED = 6
-    FIELDS_NOT_PROPER = 7
+    INVALID_TEMPLATE = 7
     SITE_API_ERROR = 8
 
 
@@ -32,8 +32,8 @@ _ERROR_ARGS = [
     (ServiceErrorCode.NO_FIELD_UPDATED,
      'Δεν ενημερώθηκε κανένα πεδίο.',
      404),
-    (ServiceErrorCode.FIELDS_NOT_PROPER,
-     'To κλειδί fields πρέπει να περιέχει dictionary.',
+    (ServiceErrorCode.INVALID_TEMPLATE,
+     'Κακή μορφή προτύπου, παρακαλώ συμβουλευτείτε το σχήμα.',
      404),
     (ServiceErrorCode.SITE_API_ERROR,
      'Παρουσιάστηκε σφάλμα διεπαφής με τη σελίδα.',

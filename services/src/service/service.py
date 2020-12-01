@@ -55,6 +55,7 @@ class Service:
     def _templates_text(self, fields):
         templates_text = ''
         for tpl_name, tpl_instances in fields.items():
+            template_text = ''
             for tpl_instance_fields in tpl_instances:
                 template_text = f'{tpl_name}'
                 for field_name, field_value in tpl_instance_fields.items():
@@ -169,8 +170,6 @@ class Service:
             result = ErrorCode.NOT_FOUND
         elif not page.can('edit'):
             result = ErrorCode.UNAUTHORIZED_ACTION
-        elif not isinstance(fields, dict):
-            result = ErrorCode.FIELDS_NOT_PROPER
         else:
             te = mwtemplates.TemplateEditor(page.text())
             fields_updated = False
@@ -208,8 +207,6 @@ class Service:
             result = ErrorCode.ALREADY_EXISTS
         elif not page.can('edit'):
             result = ErrorCode.UNAUTHORIZED_ACTION
-        elif not isinstance(fields, dict):
-            result = ErrorCode.FIELDS_NOT_PROPER
         else:
             templates_text = self._templates_text(fields)
             te = mwtemplates.TemplateEditor(templates_text)
@@ -217,5 +214,5 @@ class Service:
                 page.edit(te.wikitext())
                 result = self._service_dict(name, te)
             else:
-                result = ErrorCode.FIELDS_NOT_PROPER
+                result = ErrorCode.INVALID_TEMPLATE
         return result
