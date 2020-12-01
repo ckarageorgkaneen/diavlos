@@ -10,6 +10,7 @@ from xml.sax.saxutils import escape
 from services.data import INOUT_FILES
 
 from services.src.site import Site
+from services.src.site import SiteError
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -151,14 +152,25 @@ class Organization:
     }
 
     def __init__(self):
-        self._site = Site()
-        self._site.login()
+        self.__site = Site()
+        self._site_logged_in = False
         # Dictionaries
         self.__data_by_code = {}
         self.__name_by_code = {}
         self.__code_by_name = {}
         self.__purpose_by_id = None
         self.__type_by_id = None
+
+    @property
+    def _site(self):
+        if not self._site_logged_in:
+            try:
+                self.__site.auto_login()
+            except SiteError as e:
+                _error(str(e))
+            else:
+                self._site_logged_in = True
+        return self.__site
 
     @property
     def _purpose_by_id(self):

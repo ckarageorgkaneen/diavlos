@@ -7,9 +7,16 @@ from services.src.site import Site
 from services.src.site import SiteError
 from services.src.bpmn import BPMN
 
-
 logger = logging.getLogger(__name__)
 
+
+class ServiceError(Exception):
+    """ServiceError exception"""
+
+
+def _error(message):
+    logger.error(message)
+    raise ServiceError(message)
 
 class Service:
 
@@ -17,7 +24,6 @@ class Service:
     NAME_KEY = 'name'
     FIELDS_KEY = 'fields'
     NAMESPACE_PREFIX = 'Διαδικασία:'
-    OLD_TEMPLATE_NAME = 'Διαδικασία'
     CATEGORY_NAME = 'Διαδικασίες'
     CATEGORY = f'Category:{CATEGORY_NAME}'
     TEMPLATE_NAME = 'Process'
@@ -45,15 +51,13 @@ class Service:
             fields_dict[tpl_name] = tpl_instances_data
         return dict_
 
-    def _page_template_names(self, page):
-        return [template.page_title for template in page.templates()]
-
-    def _page_is_service(self, page, page_template_names):
-        return self.TEMPLATE_NAME in page_template_names or \
-            self.OLD_TEMPLATE_NAME in page_template_names
+    def _page(self, name):
+        if self.NAMESPACE_PREFIX not in name:
+            name = f'{self.NAMESPACE_PREFIX}{name}'
+        return self._site.pages[name]
 
     def move_all_pages_in_category_to_namespace(self):
-        self.site_login()
+        self.site_auto_login(auto=True)
         for page in self._site.categories[self.CATEGORY_NAME].members():
             page_title = page.page_title
             logger.debug(page_title)
@@ -66,12 +70,20 @@ class Service:
             except Exception as e:
                 logger.debug(e)
 
-    def site_login(self, username=None, password=None):
+    def site_auto_login(self):
+        try:
+            self._site.auto_login()
+        except SiteError as e:
+            _error(str(e))
+
+    def site_login(self, username, password):
+        result = bool(username) and bool(password)
+        if not result:
+            _error('Username and password must not be empty.')
         try:
             self._site.login(username=username, password=password)
-        except SiteError:
-            return False
-        return True
+        except SiteError as e:
+            _error(str(e))
 
     def fetch_all(self, limit_value=10, continue_value='',
                   fetch_all_info=False):
@@ -110,22 +122,21 @@ class Service:
         return result
 
     def fetch_by_name(self, name, fetch_bpmn_digital_steps=None):
-        result = ErrorCode.NOT_FOUND
-        page = self._site.pages[name]
+        page = self._page(name)
         if page.exists:
             page = page.resolve_redirect()
-            page_template_names = self._page_template_names(page)
-            if self._page_is_service(page, page_template_names):
-                service_dict = self._service_dict(
-                    name, mwtemplates.TemplateEditor(page.text()))
-                if fetch_bpmn_digital_steps is None:
-                    data = service_dict
-                else:
-                    data = BPMN(
-                        digital_steps=fetch_bpmn_digital_steps).xml(
-                        service_dict).replace('\n', '').replace(
-                        '\t', '').replace('\"', '\'')
-                result = data
+            service_dict = self._service_dict(
+                name, mwtemplates.TemplateEditor(page.text()))
+            if fetch_bpmn_digital_steps is None:
+                data = service_dict
+            else:
+                data = BPMN(
+                    digital_steps=fetch_bpmn_digital_steps).xml(
+                    service_dict).replace('\n', '').replace(
+                    '\t', '').replace('\"', '\'')
+            result = data
+        else:
+            result = ErrorCode.NOT_FOUND
         return result
 
     def fetch_by_id(self, id_, id_is_uuid=False,
@@ -151,16 +162,14 @@ class Service:
         return result
 
     def update(self, name, fields):
-        page = self._site.pages[name]
-        page_template_names = self._page_template_names(page)
-        if not (page.exists and self._page_is_service(
-                page, page_template_names)):
-            result = ErrorCode.NOT_FOUND
-        elif not page.can('edit'):
+        page = self._page(name)
+        if not page.can('edit'):
             result = ErrorCode.UNAUTHORIZED_ACTION
-        else:
+        elif page.exists:
             te = mwtemplates.TemplateEditor(page.text())
             fields_updated = False
+            page_template_names = [
+                template.page_title for template in page.templates()]
             for tpl_name, tpl_instances_dict in fields.items():
                 if tpl_name in page_template_names:
                     page_tpl_instances = te.templates[tpl_name]
@@ -182,15 +191,16 @@ class Service:
                             continue
             if fields_updated:
                 page.edit(te.wikitext())
-            if fields_updated:
                 result = self._service_dict(
                     name, mwtemplates.TemplateEditor(page.text()))
             else:
                 result = ErrorCode.NO_FIELD_UPDATED
+        else:
+            result = ErrorCode.NOT_FOUND
         return result
 
     def add(self, name, fields):
-        page = self._site.pages[name]
+        page = self._page(name)
         if page.exists:
             result = ErrorCode.ALREADY_EXISTS
         elif not page.can('edit'):

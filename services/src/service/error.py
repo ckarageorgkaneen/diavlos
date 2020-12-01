@@ -1,5 +1,5 @@
 from services.src.helper.error import ErrorCode
-from services.src.helper.error import Error
+from services.src.helper.error import ErrorData
 
 
 class ServiceErrorCode(ErrorCode):
@@ -41,5 +41,5 @@ _ERROR_ARGS = [
      )
 ]
 
-ServiceError = Error()
-ServiceError.add_many(_ERROR_ARGS)
+ServiceErrorData = ErrorData()
+ServiceErrorData.add_many(_ERROR_ARGS)

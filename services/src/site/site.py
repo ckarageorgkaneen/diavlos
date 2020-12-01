@@ -39,12 +39,12 @@ class Site:
                 self.__credentials = tuple(yaml.safe_load(f).values())
         return self.__credentials
 
-    def login(self, username=None, password=None):
+    def auto_login(self):
+        self._client.login(*self._credentials)
+
+    def login(self, username, password):
         try:
-            if username is not None and password is not None:
-                self._client.login(username, password)
-            else:
-                self._client.login(*self._credentials)
+            self._client.login(username, password)
         except (mwclient.errors.LoginError,
                 mwclient.errors.APIError) as e:
             _error(str(e))

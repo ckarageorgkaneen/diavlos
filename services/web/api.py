@@ -8,12 +8,13 @@ from flask import request
 from flask_httpauth import HTTPBasicAuth
 
 from services.src.eparavolo import eParavolo
-from services.src.eparavolo.error import eParavoloError
 from services.src.eparavolo.error import eParavoloErrorCode
+from services.src.eparavolo.error import eParavoloErrorData
 from services.src.helper.error import ErrorCode
 from services.src.organization import Organization
 from services.src.service import Service
-from services.src.service.error import ServiceError
+from services.src.service import ServiceError
+from services.src.service.error import ServiceErrorData
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -101,10 +102,10 @@ def make_response(func):
             status_code = 400
         elif isinstance(result, ErrorCode):
             if isinstance(result, eParavoloErrorCode):
-                error_instance = eParavoloError
+                error_handler = eParavoloErrorData
             else:
-                error_instance = ServiceError
-            message, status_code = error_instance(result)
+                error_handler = ServiceErrorData
+            message, status_code = error_handler(result)
             response = {
                 'success': False,
                 'message': message
@@ -122,7 +123,13 @@ def make_response(func):
 
 @auth.verify_password
 def service_site_login(username, password):
-    return service.site_login(username, password)
+    try:
+        service.site_login(username, password)
+    except ServiceError:
+        result = False
+    else:
+        result = True
+    return result
 
 
 @app.route("/api/public/services")

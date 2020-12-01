@@ -5,7 +5,7 @@ class ErrorCode(Enum):
     pass
 
 
-class Error:
+class ErrorData:
     _MSG_KEY = 'message'
     _STATUS_CODE_KEY = 'status_code'
 

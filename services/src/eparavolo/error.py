@@ -1,12 +1,12 @@
 from services.src.helper.error import ErrorCode
-from services.src.helper.error import Error
+from services.src.helper.error import ErrorData
 
 
 class eParavoloErrorCode(ErrorCode):
     NOT_FOUND = 1
 
 
-eParavoloError = Error()
-eParavoloError.add(eParavoloErrorCode.NOT_FOUND,
-                   'Δεν βρέθηκαν αποτελέσματα.',
-                   200)
+eParavoloErrorData = ErrorData()
+eParavoloErrorData.add(eParavoloErrorCode.NOT_FOUND,
+                       'Δεν βρέθηκαν αποτελέσματα.',
+                       200)
