@@ -212,8 +212,8 @@ class Service:
                 for tpl_instance_fields in tpl_instances:
                     template_text = f'{tpl_name}'
                     for field_name, field_value in tpl_instance_fields.items():
-                        template_text += f'|{field_name}={field_value}'
-                    template_text = f'{{{{{template_text}}}}}'
+                        template_text += f'\n|{field_name}={field_value}'
+                    template_text = f'{{{{{template_text}\n}}}}\n'
                     templates_text += template_text
             te = mwtemplates.TemplateEditor(templates_text)
             if te.templates:
