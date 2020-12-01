@@ -52,18 +52,6 @@ class Service:
         return self.TEMPLATE_NAME in page_template_names or \
             self.OLD_TEMPLATE_NAME in page_template_names
 
-    def _templates_text(self, fields):
-        templates_text = ''
-        for tpl_name, tpl_instances in fields.items():
-            template_text = ''
-            for tpl_instance_fields in tpl_instances:
-                template_text = f'{tpl_name}'
-                for field_name, field_value in tpl_instance_fields.items():
-                    template_text += f'|{field_name}={field_value}'
-                template_text = f'{{{{{template_text}}}}}'
-            templates_text += template_text
-        return templates_text
-
     def move_all_pages_in_category_to_namespace(self):
         self.site_login()
         for page in self._site.categories[self.CATEGORY_NAME].members():
@@ -208,7 +196,15 @@ class Service:
         elif not page.can('edit'):
             result = ErrorCode.UNAUTHORIZED_ACTION
         else:
-            templates_text = self._templates_text(fields)
+            templates_text = ''
+            for tpl_name, tpl_instances in fields.items():
+                template_text = ''
+                for tpl_instance_fields in tpl_instances:
+                    template_text = f'{tpl_name}'
+                    for field_name, field_value in tpl_instance_fields.items():
+                        template_text += f'|{field_name}={field_value}'
+                    template_text = f'{{{{{template_text}}}}}'
+                    templates_text += template_text
             te = mwtemplates.TemplateEditor(templates_text)
             if te.templates:
                 page.edit(te.wikitext())
