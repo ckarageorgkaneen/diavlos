@@ -55,8 +55,9 @@ update_schema = {
             "patternProperties": {
                 "^.*$": {
                     "additionalProperties": False,
+                    "type": "object",
                     "patternProperties": {
-                        "^(([1-9][0-9]*)|0)$": {
+                        "^[1-9][0-9]*$": {
                             "patternProperties": {
                                 "^.*$": {"type": "string"}
                             }

@@ -1,6 +1,6 @@
 import logging
 import mwclient
-import mwtemplates
+from mwtemplates import TemplateEditor
 
 from .error import ServiceErrorCode as ErrorCode
 from services.src.site import Site
@@ -17,6 +17,13 @@ class ServiceError(Exception):
 def _error(message):
     logger.error(message)
     raise ServiceError(message)
+
+
+def _template_text(template_name, template_instance):
+    template_text = template_name
+    for field_name, field_value in template_instance.items():
+        template_text += f'\n |{field_name}={field_value}'
+    return f'{{{{{template_text}\n}}}}\n'
 
 class Service:
 
@@ -43,11 +50,11 @@ class Service:
         for tpl_name in template_editor.templates.keys():
             tpl_instances = template_editor.templates[tpl_name]
             tpl_instances_data = {}
-            for tpl_num, tpl_instance in enumerate(tpl_instances):
+            for tpl_idx, tpl_instance in enumerate(tpl_instances):
                 tpl_instance_dict = {}
                 for param in tpl_instance.parameters:
                     tpl_instance_dict[param.name] = param.value
-                tpl_instances_data[tpl_num] = tpl_instance_dict
+                tpl_instances_data[tpl_idx + 1] = tpl_instance_dict
             fields_dict[tpl_name] = tpl_instances_data
         return dict_
 
@@ -126,7 +133,7 @@ class Service:
         if page.exists:
             page = page.resolve_redirect()
             service_dict = self._service_dict(
-                name, mwtemplates.TemplateEditor(page.text()))
+                name, TemplateEditor(page.text()))
             if fetch_bpmn_digital_steps is None:
                 data = service_dict
             else:
@@ -166,33 +173,65 @@ class Service:
         if not page.can('edit'):
             result = ErrorCode.UNAUTHORIZED_ACTION
         elif page.exists:
-            te = mwtemplates.TemplateEditor(page.text())
+            te = TemplateEditor(page.text())
             fields_updated = False
-            page_template_names = [
-                template.page_title for template in page.templates()]
-            for tpl_name, tpl_instances_dict in fields.items():
-                if tpl_name in page_template_names:
+            for tpl_name, tpl_instances in fields.items():
+                template_names = te.templates.keys()
+                if tpl_name in template_names:
                     page_tpl_instances = te.templates[tpl_name]
-                    for instance_num_str, instance_fields in \
-                            tpl_instances_dict.items():
+                    # Update template instances
+                    for instance_num_str, tpl_instance in \
+                            tpl_instances.items():
                         instance_num = int(instance_num_str)
                         try:
-                            page_tpl = page_tpl_instances[instance_num]
-                            for field_name, field_value in \
-                                    instance_fields.items():
-                                if field_name in page_tpl.parameters:
-                                    # Update field
-                                    page_tpl.parameters[field_name] = \
-                                        field_value
-                                    if not fields_updated:
-                                        fields_updated = True
+                            page_tpl = page_tpl_instances[instance_num - 1]
                         except IndexError:
-                            # Template instance does not exist
-                            continue
+                            # Template instance does not exist, create it
+                            if instance_num > len(page_tpl_instances):
+                                # Only if numbering is greater than the last
+                                # existing instance number
+                                new_tpl_text = _template_text(
+                                    tpl_name, tpl_instance)
+                                if new_tpl_text:
+                                    new_wiki_text = ''
+                                    for name, tpls in te.templates.items():
+                                        for tpl in tpls:
+                                            new_wiki_text += f'{str(tpl)}\n'
+                                        if name == tpl_name:
+                                            new_wiki_text += \
+                                                f'{new_tpl_text}'
+                                    if new_wiki_text:
+                                        te = TemplateEditor(new_wiki_text)
+                                        if not fields_updated:
+                                            fields_updated = True
+                        else:
+                            for field_name, field_value in \
+                                    tpl_instance.items():
+                                # Update or create field
+                                page_tpl.parameters[field_name] = \
+                                    field_value
+                                if not fields_updated:
+                                    fields_updated = True
+                else:
+                    new_templates_text = ''
+                    for instance_num_str, tpl_instance in \
+                            tpl_instances.items():
+                        new_templates_text += _template_text(
+                            tpl_name, tpl_instance)
+                    if new_templates_text:
+                        # Append new templates to wiki text
+                        new_wiki_text = \
+                            f'{te.wikitext()}\n{new_templates_text}'
+                        te = TemplateEditor(new_wiki_text)
+                        if not fields_updated:
+                            fields_updated = True
             if fields_updated:
-                page.edit(te.wikitext())
+                wikitext = te.wikitext().replace('\n\n', '\n')
+                if wikitext[0] == '\n':
+                    wikitext = wikitext[1:]
+                page.edit(wikitext)
                 result = self._service_dict(
-                    name, mwtemplates.TemplateEditor(page.text()))
+                    name, TemplateEditor(page.text()))
             else:
                 result = ErrorCode.NO_FIELD_UPDATED
         else:
@@ -208,14 +247,9 @@ class Service:
         else:
             templates_text = ''
             for tpl_name, tpl_instances in fields.items():
-                template_text = ''
-                for tpl_instance_fields in tpl_instances:
-                    template_text = f'{tpl_name}'
-                    for field_name, field_value in tpl_instance_fields.items():
-                        template_text += f'\n|{field_name}={field_value}'
-                    template_text = f'{{{{{template_text}\n}}}}\n'
-                    templates_text += template_text
-            te = mwtemplates.TemplateEditor(templates_text)
+                for tpl_instance in tpl_instances:
+                    templates_text += _template_text(tpl_name, tpl_instance)
+            te = TemplateEditor(templates_text)
             if te.templates:
                 page.edit(te.wikitext())
                 result = self._service_dict(name, te)
