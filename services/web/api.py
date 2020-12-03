@@ -67,10 +67,12 @@ update_schema = {
             }
         }
     },
-    "required": [
-        "name",
-        "fields"
-    ]
+    "required": ["fields"],
+    "oneOf": [
+        {"required": ["name"]},
+        {"required": ["uuid"]},
+        {"required": ["id"]},
+    ],
 }
 
 VALIDATION_ERROR_MSG = 'Ακατάλληλο σχήμα json.'
@@ -169,7 +171,7 @@ def fetch_service():
     elif service_id:
         result = service.fetch_by_id(
             id_=service_id,
-            id_is_uuid=bool(uuid),
+            is_uuid=bool(uuid),
             fetch_bpmn_digital_steps=fetch_bpmn_digital_steps)
     else:
         result = 'Υποχρεωτική παράμετρος: name ή uuid.'
@@ -188,8 +190,17 @@ def add_service(name, fields):
 @auth.login_required
 @make_response
 @validate_schema(update_schema)
-def update_service(name, fields):
-    return service.update(name, fields)
+def update_service(**kwargs):
+    name = kwargs.get('name')
+    uuid = kwargs.get('uuid')
+    id_ = kwargs.get('id')
+    fields = kwargs.get('fields')
+    if name:
+        result = service.update(name, fields)
+    else:
+        service_id = uuid or id_
+        result = service.update_by_id(service_id, fields, is_uuid=bool(uuid))
+    return result
 
 
 @app.route("/api/public/paravolo/<int:code>")

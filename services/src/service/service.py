@@ -63,6 +63,24 @@ class Service:
             name = f'{self.NAMESPACE_PREFIX}{name}'
         return self._site.pages[name]
 
+    def _name_by_id(self, id_, is_uuid=False):
+        property_name = self.UUID_PROPERTY_NAME \
+            if is_uuid else self.ID_PROPERTY_NAME
+        askargs_conditions = f'{property_name}::{id_}'
+        try:
+            site_response = self._site.get(
+                'askargs', format='json',
+                conditions=askargs_conditions)
+        except mwclient.errors.APIError:
+            result = ErrorCode.SITE_API_ERROR
+        else:
+            site_response_results = site_response['query']['results']
+            if len(site_response_results) == 1:
+                result = next(iter(site_response_results))
+            else:
+                result = None
+        return result
+
     def move_all_pages_in_category_to_namespace(self):
         self.site_auto_login(auto=True)
         for page in self._site.categories[self.CATEGORY_NAME].members():
@@ -146,26 +164,23 @@ class Service:
             result = ErrorCode.NOT_FOUND
         return result
 
-    def fetch_by_id(self, id_, id_is_uuid=False,
+    def fetch_by_id(self, id_, is_uuid=False,
                     fetch_bpmn_digital_steps=None):
-        property_name = self.UUID_PROPERTY_NAME \
-            if id_is_uuid else self.ID_PROPERTY_NAME
-        askargs_conditions = f'{property_name}::{id_}'
-        try:
-            site_response = self._site.get(
-                'askargs', format='json',
-                conditions=askargs_conditions)
-        except mwclient.errors.APIError:
-            result = ErrorCode.SITE_API_ERROR
+        service_name = self._name_by_id(id_, is_uuid=is_uuid)
+        if service_name is None:
+            result = ErrorCode.NOT_FOUND
         else:
-            site_response_results = site_response['query']['results']
-            if len(site_response_results) == 1:
-                service_name = next(iter(site_response_results))
-                result = self.fetch_by_name(
-                    service_name,
-                    fetch_bpmn_digital_steps=fetch_bpmn_digital_steps)
-            else:
-                result = ErrorCode.NOT_FOUND
+            result = self.fetch_by_name(
+                service_name,
+                fetch_bpmn_digital_steps=fetch_bpmn_digital_steps)
+        return result
+
+    def update_by_id(self, id_, fields, is_uuid=False):
+        service_name = self._name_by_id(id_, is_uuid=is_uuid)
+        if service_name is None:
+            result = ErrorCode.NOT_FOUND
+        else:
+            result = self.update(service_name, fields)
         return result
 
     def update(self, name, fields):
