@@ -15,12 +15,14 @@ from services.src.organization import Organization
 from services.src.service import Service
 from services.src.service import ServiceError
 from services.src.service.error import ServiceErrorData
+from services.src.metadata import Metadata
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
 service = Service()
 eparavolo = eParavolo()
 organization = Organization()
+metadata = Metadata()
 
 
 add_schema = {
@@ -73,6 +75,16 @@ update_schema = {
         {'required': ['uuid']},
         {'required': ['id']},
     ],
+}
+
+metadata_schema = {
+    'type': 'object',
+    'properties': {
+        'uuid': {'type': 'string'},
+        'type': {'type': 'string'},
+        'fields': {'type': 'object'}
+    },
+    'required': ['uuid', 'type', 'fields']
 }
 
 VALIDATION_ERROR_MSG = 'Ακατάλληλο σχήμα json.'
@@ -224,4 +236,44 @@ def organization_units():
         result = organization.units(name, unit_types=unit_types)
     else:
         result = 'Υποχρεωτική παράμετρος: name'
+    return result
+
+
+@app.route('/api/metadata')
+@make_response
+def fetch_metadata():
+    uuid = request.args.get('uuid')
+    type_ = request.args.get('type')
+    if uuid and type_:
+        result = metadata.read(uuid, type_)
+    else:
+        result = 'Υποχρεωτική παράμετροι: uuid, type'
+    if not result:
+        result = 'Δεν υπάρχει αυτή η καταχώρηση.'
+    return result
+
+
+@app.route('/api/metadata/add', methods=['POST'])
+@auth.login_required
+@make_response
+@validate_schema(metadata_schema)
+def create_metadata(uuid, type, fields):
+    result = metadata.create(uuid, type, **fields)
+    if result:
+        result = metadata.read(uuid, type)
+    else:
+        result = 'Υπάρχει ήδη αυτή η καταχώρηση (uuid, type).'
+    return result
+
+
+@app.route('/api/metadata/update', methods=['POST'])
+@auth.login_required
+@make_response
+@validate_schema(metadata_schema)
+def update_metadata(uuid, type, fields):
+    result = metadata.update(uuid, type, **fields)
+    if result:
+        result = metadata.read(uuid, type)
+    else:
+        result = 'Δεν ενημερώθηκαν μεταδεδομένα.'
     return result
