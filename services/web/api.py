@@ -135,7 +135,7 @@ def service_site_login(username, password):
     return result
 
 
-@app.route('/api/public/services')
+@app.route('/api/services')
 @make_response
 def fetch_all_services():
     all_info = request.args.get('all_info')
@@ -151,7 +151,7 @@ def fetch_all_services():
     return service.fetch_all(**kwargs)
 
 
-@app.route('/api/public/service')
+@app.route('/api/service')
 @make_response
 def fetch_service():
     name = request.args.get('name')
@@ -178,7 +178,7 @@ def fetch_service():
     return result
 
 
-@app.route('/api/public/service/add', methods=['POST'])
+@app.route('/api/service/add', methods=['POST'])
 @auth.login_required
 @make_response
 @validate_schema(add_schema)
@@ -186,7 +186,7 @@ def add_service(name, fields):
     return service.add(name, fields)
 
 
-@app.route('/api/public/service/update', methods=['POST'])
+@app.route('/api/service/update', methods=['POST'])
 @auth.login_required
 @make_response
 @validate_schema(update_schema)
@@ -203,13 +203,13 @@ def update_service(**kwargs):
     return result
 
 
-@app.route('/api/public/paravolo/<int:code>')
+@app.route('/api/paravolo/<int:code>')
 @make_response
 def paravolo(code: int):
     return eparavolo.fetch(code)
 
 
-@app.route('/api/public/organization/units')
+@app.route('/api/organization/units')
 @make_response
 def organization_units():
     name = request.args.get('name')
