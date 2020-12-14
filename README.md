@@ -1,8 +1,8 @@
 # diavlos
 
-## Manager for ΔΙΑΥΛΟΣ - Greece's National Service Registry
-
 <p align="center"> <img src="resources/logo.jpg?raw=true"/> </p>
+
+## Manager for DIAVLOS - Greece's National Service Registry
 
 ### Install:
 ```bash
