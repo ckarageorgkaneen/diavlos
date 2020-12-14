@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from services.src.site import Site
+from diavlos.src.site import Site
 
 for page in Site().categories['Κατάλογος Φορέων']:
     page_title = page.page_title

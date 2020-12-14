@@ -2,8 +2,8 @@
 import sys
 import logging
 
-from services.src.service import service_logger
-from services.src.service import Service
+from diavlos.src.service import service_logger
+from diavlos.src.service import Service
 
 stdout_hdl = logging.StreamHandler(sys.stdout)
 stdout_hdl.setLevel(logging.DEBUG)

@@ -3,9 +3,9 @@ import mwclient
 from mwtemplates import TemplateEditor
 
 from .error import ServiceErrorCode as ErrorCode
-from services.src.site import Site
-from services.src.site import SiteError
-from services.src.bpmn import BPMN
+from diavlos.src.site import Site
+from diavlos.src.site import SiteError
+from diavlos.src.bpmn import BPMN
 
 logger = logging.getLogger(__name__)
 

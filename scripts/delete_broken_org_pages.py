@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from services.src.site import Site
+from diavlos.src.site import Site
 
 site = Site()
 site.auto_login()

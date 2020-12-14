@@ -3,7 +3,7 @@ import yaml
 
 import mwclient
 
-from services.data import IN_FILES
+from diavlos.data import IN_FILES
 
 logger = logging.getLogger(__name__)
 

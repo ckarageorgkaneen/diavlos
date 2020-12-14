@@ -10,7 +10,7 @@ from zeep.wsse.username import UsernameToken
 from zeep.exceptions import Error as ZeepError
 
 from .error import eParavoloErrorCode as ErrorCode
-from services.data import IN_FILES
+from diavlos.data import IN_FILES
 
 logger = logging.getLogger(__name__)
 

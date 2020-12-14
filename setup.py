@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='diadikasies',
+    name='diavlos',
     version='0.1.0',
-    packages=find_packages(include=['services']),
+    packages=find_packages(include=['diavlos']),
     install_requires=[
         'pyyaml==5.3',
         'mwclient==0.10.1',

@@ -1,5 +1,5 @@
-from services.src.helper.error import ErrorCode
-from services.src.helper.error import ErrorData
+from diavlos.src.helper.error import ErrorCode
+from diavlos.src.helper.error import ErrorData
 
 
 class eParavoloErrorCode(ErrorCode):

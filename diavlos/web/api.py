@@ -7,15 +7,15 @@ from flask import jsonify
 from flask import request
 from flask_httpauth import HTTPBasicAuth
 
-from services.src.eparavolo import eParavolo
-from services.src.eparavolo.error import eParavoloErrorCode
-from services.src.eparavolo.error import eParavoloErrorData
-from services.src.helper.error import ErrorCode
-from services.src.organization import Organization
-from services.src.service import Service
-from services.src.service import ServiceError
-from services.src.service.error import ServiceErrorData
-from services.src.metadata import Metadata
+from diavlos.src.eparavolo import eParavolo
+from diavlos.src.eparavolo.error import eParavoloErrorCode
+from diavlos.src.eparavolo.error import eParavoloErrorData
+from diavlos.src.helper.error import ErrorCode
+from diavlos.src.organization import Organization
+from diavlos.src.service import Service
+from diavlos.src.service import ServiceError
+from diavlos.src.service.error import ServiceErrorData
+from diavlos.src.metadata import Metadata
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()

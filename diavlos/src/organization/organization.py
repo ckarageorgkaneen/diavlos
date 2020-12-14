@@ -7,10 +7,10 @@ from mwtemplates import TemplateEditor
 
 from xml.sax.saxutils import escape
 
-from services.data import INOUT_FILES
+from diavlos.data import INOUT_FILES
 
-from services.src.site import Site
-from services.src.site import SiteError
+from diavlos.src.site import Site
+from diavlos.src.site import SiteError
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
