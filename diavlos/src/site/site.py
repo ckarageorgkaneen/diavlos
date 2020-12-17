@@ -18,29 +18,34 @@ def _error(message):
 
 
 class Site:
-    _URL = 'diadikasies.dev.grnet.gr'
+    _CONFIG_FILE = IN_FILES['site_config']
     _SCHEME = 'https'
     _PATH = '/'
-    _CREDENTIALS_FILE = IN_FILES['site_credentials']
 
     def __init__(self):
-        self._client = mwclient.Site(
-            self._URL, scheme=self._SCHEME, path=self._PATH)
-        self.__credentials = None
+        self.__client = None
+        self.__config = None
         self.pages = self._client.pages
         self.categories = self._client.categories
         self.api = self._client.api
         self.get = self._client.get
 
     @property
-    def _credentials(self):
-        if self.__credentials is None:
-            with open(self._CREDENTIALS_FILE) as f:
-                self.__credentials = tuple(yaml.safe_load(f).values())
-        return self.__credentials
+    def _client(self):
+        if self.__client is None:
+            self.__client = mwclient.Site(
+                self._config['url'], scheme=self._SCHEME, path=self._PATH)
+        return self.__client
+
+    @property
+    def _config(self):
+        if self.__config is None:
+            with open(self._CONFIG_FILE) as f:
+                self.__config = yaml.safe_load(f)
+        return self.__config
 
     def auto_login(self):
-        self._client.login(*self._credentials)
+        self._client.login(self._config['username'], self._config['password'])
 
     def login(self, username, password):
         try:
