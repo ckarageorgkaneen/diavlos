@@ -180,7 +180,7 @@ class BPMN:
 
     # print('==>' + str(len(options)))
     process_steps = self._process_steps
-    stepname = process_steps[stepcount - 1].get(
+    stepname = process_steps[stepcount].get(
         self.PROCESS_STEP_TITLE)
 
     # if no BranchNodes are found
@@ -622,7 +622,7 @@ class BPMN:
       if planeHeight < 110 * boxHeightFactor:
         planeHeight = 110 * boxHeightFactor
       prevstepname = self._process_steps[
-          stepcount - 2].get(self.PROCESS_STEP_TITLE)
+          stepcount - 1].get(self.PROCESS_STEP_TITLE)
       prevstepid = str(hash(prevstepname))
       head = 'Task_'
       # edgeoffset = 100
