@@ -109,7 +109,7 @@ def make_response(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        if isinstance(result, str):
+        if isinstance(result, str) and not result.startswith('<'):
             response = {
                 'success': False,
                 'message': result
