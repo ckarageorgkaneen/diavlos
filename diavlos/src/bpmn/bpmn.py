@@ -5,15 +5,37 @@ from lxml.etree import QName
 
 _DIGITAL_STR = 'digital'
 _TITLE_STR = 'title'
+_IMPLEMENTATION_STR = 'implementation'
 _CHILD_STR = 'child'
 _SEMANTIC_STR = 'semantic'
 _DEFINITIONS_STR = 'definitions'
+_TIMER_STR = 'Timer'
+_MIN_STR = 'min'
+_MAX_STR = 'max'
 _NUM_ID_SUFFIX = 'num_id'
 _PREV_CHILD_SUFFIX = f'previous_{_CHILD_STR}'
+
+_MAX_DURATION_TEMPLATE = {
+    'Λεπτά': 'PT{}M',
+    'Ώρες': 'PT{}Η',
+    'Ημέρες': 'P{}DS',
+    'Εβδομάδες': 'P{}WS',
+    'Μήνες': 'P{}MS'
+}
 
 
 def bracketize(string):
     return f'{{{string}}}'
+
+
+def getMaxDurationAsString(timer):
+    duration_type = timer[2]
+    try:
+        template = _MAX_DURATION_TEMPLATE[duration_type]
+    except KeyError:
+        return ''
+    max_duration = timer[1]
+    return template.format(max_duration)
 
 
 class BPMNNamespaces:
@@ -56,6 +78,7 @@ class BPMN:
     _PARTICIPANT_PREFIX = 'participant_'
     _EXCLUSIVE_GATEWAY_PREFIX = 'ExclusiveGateway_'
     _C_PREFIX = 'C'
+    _TIMER_PREFIX = f'{_TIMER_STR}_'
     # Suffixes
     _WAYPOINT_SUFFIX = 'waypoint'
     _START_EVENT_SUFFIX = 'startEvent'
@@ -68,6 +91,8 @@ class BPMN:
     _DATA_OBJECT_REFERENCE_PREFIX = 'DataObjectReference_'
     _INCOMING_SUFFIX = 'incoming'
     _TASK_SUFFIX = 'task'
+    _MANUAL_TASK_SUFFIX = 'manualTask'
+    _SERVICE_TASK_SUFFIX = 'serviceTask'
     _COLLABORATION_SUFFIX = 'collaboration'
     _PARTICIPANT_SUFFIX = 'participant'
     _EXCLUSIVE_GATEWAY_SUFFIX = 'exclusiveGateway'
@@ -82,6 +107,9 @@ class BPMN:
     _EDGE_SUFFIX = 'BPMNEdge'
     _DIAGRAM_SUFFIX = 'BPMNDiagram'
     _PLANE_SUFFIX = 'BPMNPlane'
+    _BOUNDARY_EVENT_SUFFIX = 'boundaryEvent'
+    _TIMER_EVENT_DEF_SUFFIX = 'timerEventDefinition'
+    _TIME_DURATION_SUFFIX = 'timeDuration'
     # Process evidences
     _PROCESS_EVIDENCES_STR = 'Process evidences'
     _PROCESS_EVIDENCE_PREFIX = 'process_evidence'
@@ -89,8 +117,16 @@ class BPMN:
     _PROCESS_STEPS_STR = 'Process steps'
     _PROCESS_STEP_PREFIX = 'process_step'
     _PROCESS_STEP_TITLE = None
+    _PROCESS_STEP_IMPLEMENTATION = None
     _PROCESS_STEP_CHILD = None
     _PROCESS_STEP_PREVIOUS_CHILD = None
+
+    # Process steps duration
+    _PROCESS_STEP_DURATION_MAX = 'process_step_duration_max'
+    _PROCESS_STEP_DURATION_MIN = 'process_step_duration_min'
+    _PROCESS_STEP_DURATION_TYPE = 'process_step_duration_type'
+    _TFORMALEXPRESSION = 'tFormalExpression'
+
     # X
     _X_SHAPE = 100
     # Y
@@ -111,7 +147,7 @@ class BPMN:
     _WIDTH_LABEL_VARIANT_2 = 190
     _WIDTH_DOC_ICON = 36
     # Heights
-    _HEIGHT_LABEL = 20
+    _HEIGHT_LABEL = 40
     _HEIGHT_LABEL_VARIANT = _WIDTH_LABEL_VARIANT
     _HEIGHT_RHOMBUS = _WIDTH_RHOMBUS
     _HEIGHT_DOC_ICON = 50
@@ -123,15 +159,16 @@ class BPMN:
     _OFFSET_X_APPEND_SHAPES_AND_EDGES = 150
     _OFFSET_DOC_TAB = 200
     _OFFSET_X_DOC = 100
+    _OFFSET_Y_DOC = 150
     _OFFSET_EVIDENCES_Y_LABEL = 60
     _OFFSET_BOUNDS_WIDTH = 50
     # Multipliers
     _MULTIPLIER_BOX_HEIGHT = 120
-    _MULTIPLIER_BOX_HEIGHT_VARIANT = 110
-    _MULTIPLIER_BOX_HEIGHT_VARIANT_2 = 100
+    _MULTIPLIER_TASK_TEXT_HEIGHT = 27
     _MULTIPLIER_EVIDENCES_TEXT_HEIGHT = 10
     # Divisors
     _DIVISOR_BOX_HEIGHT = 25
+    _DIVISOR_TASK_ROWS = 9
     _DIVISOR_EVIDENCES_ROWS = 6.5
     # Iraklis stuff
     # Widths
@@ -161,6 +198,8 @@ class BPMN:
     _START_EVENT_NAME = 'Έναρξη'
     _END_EVENT_NAME = 'Λήξη'
     _SELECTION_NAME = 'Επιλογή'
+    _MANUAL_TASK = 'Χειροκίνητη ενέργεια'
+    _SERVICE_TASK = 'Ενέργεια μέσω λογισμικού'
     _TASK_1_NAME = 'Task_1'
     _PROCESS_STR = 'process'
     _LANE_SET_STR = 'laneSet'
@@ -179,6 +218,8 @@ class BPMN:
         else:
             process_step_prefix = self._PROCESS_STEP_PREFIX
         self._PROCESS_STEP_TITLE = f'{process_step_prefix}_{_TITLE_STR}'
+        self._PROCESS_STEP_IMPLEMENTATION = \
+            f'{process_step_prefix}_{_IMPLEMENTATION_STR}'
         self._PROCESS_STEP_NUM_ID = f'{process_step_prefix}_{_NUM_ID_SUFFIX}'
         self._PROCESS_STEP_CHILD = f'{process_step_prefix}_{_CHILD_STR}'
         self._PROCESS_STEP_PREVIOUS_CHILD = f'{process_step_prefix}_'\
@@ -320,12 +361,41 @@ class BPMN:
     def _handlePlainNodes(self, data, process, allnodes, options, stepcount):
         process_steps = self._process_steps
         stepname = process_steps[stepcount].get(self._PROCESS_STEP_TITLE)
+        stepimpl = process_steps[stepcount].get(
+            self._PROCESS_STEP_IMPLEMENTATION)
+        if stepimpl == self._MANUAL_TASK:
+            steptype = self._MANUAL_TASK_SUFFIX
+        elif stepimpl == self._SERVICE_TASK:
+            steptype = self._SERVICE_TASK_SUFFIX
+        else:
+            steptype = self._TASK_SUFFIX
+        step = process_steps[stepcount]
+        timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
+                 step.get(self._PROCESS_STEP_DURATION_MAX),
+                 step.get(self._PROCESS_STEP_DURATION_TYPE))
         # If no BranchNodes are found
         if len(options) == 0:
             task = etree.SubElement(process,
-                                    self._ns.semantic + self._TASK_SUFFIX,
+                                    self._ns.semantic + steptype,
                                     id=self._TASK_PREFIX + str(stepcount),
                                     name=stepname, nsmap=self._ns.NSMAP)
+            name = f'{_MIN_STR}:{timer[0]}, {_MAX_STR}:{timer[1]} {timer[2]}'
+            boundaryEvent = etree.SubElement(
+                process, self._ns.semantic + self._BOUNDARY_EVENT_SUFFIX,
+                id=self._TIMER_PREFIX + str(stepcount),
+                # name=self._TASK_PREFIX + str(stepcount)+"_Duration",
+                name=name,
+                attachedToRef=self._TASK_PREFIX + str(stepcount),
+                nsmap=self._ns.NSMAP)
+            timerEvent = etree.SubElement(
+                boundaryEvent,
+                self._ns.semantic + self._TIMER_EVENT_DEF_SUFFIX)
+            timeDuration = etree.SubElement(
+                timerEvent, self._ns.semantic + self._TIME_DURATION_SUFFIX)
+            timeDuration.attrib[
+                QName(self._ns.xsi_NAMESPACE, self._TYPE_KEY)] = \
+                _SEMANTIC_STR + ':' + self._TFORMALEXPRESSION
+            timeDuration.text = getMaxDurationAsString(timer)
             incoming = etree.SubElement(
                 task, self._ns.semantic + self._INCOMING_SUFFIX,
                 nsmap=self._ns.NSMAP)
@@ -339,7 +409,8 @@ class BPMN:
             chains, maxchainlength = self.group_options(options)
             self._addBranchNodes(options, chains, process, allnodes, stepcount)
             self._addMergeNodes(options, chains, process,
-                                allnodes, stepcount, stepname, False)
+                                allnodes, stepcount, stepname,
+                                steptype, timer, False)
             options = []
 
     def _appendCollaboration(self, definition, process_name):
@@ -387,6 +458,17 @@ class BPMN:
             subchaincount += 1
             #  Handle the 1st node of each chain
             step = chain[0]
+
+            stepimpl = step.get(self._PROCESS_STEP_IMPLEMENTATION)
+            if stepimpl == self._MANUAL_TASK:
+                steptype = self._MANUAL_TASK_SUFFIX
+            elif stepimpl == self._SERVICE_TASK:
+                steptype = self._SERVICE_TASK_SUFFIX
+            else:
+                steptype = self._TASK_SUFFIX
+            timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
+                     step.get(self._PROCESS_STEP_DURATION_MAX),
+                     step.get(self._PROCESS_STEP_DURATION_TYPE))
             # i)
             outgoing = etree.SubElement(
                 exclusiveGateway,
@@ -398,13 +480,34 @@ class BPMN:
                     subchaincount) + self._1_SUFFIX
             # iii) e.g. Subtask_3_1_1, Subtask_3_2_1  etc.
             subTask = etree.SubElement(
-                process, self._ns.semantic + self._TASK_SUFFIX,
+                process, self._ns.semantic + steptype,
                 id=self._SUBTASK_PREFIX + str(
                     stepcount - len(options)) + '_' + str(
                     subchaincount) + self._1_SUFFIX,
                 name=step.get(self._PROCESS_STEP_TITLE),
                 nsmap=self._ns.NSMAP)
-            # set the current task as the last task of the chain
+            name = f'{_MIN_STR}:{timer[0]}, {_MAX_STR}:{timer[1]} {timer[2]}'
+            boundaryEvent = etree.SubElement(
+                process, self._ns.semantic + self._BOUNDARY_EVENT_SUFFIX,
+                id=self._TIMER_PREFIX + str(
+                    stepcount - len(options)) + '_' + str(
+                    subchaincount) + self._1_SUFFIX,
+                # name=self._TASK_PREFIX + str(stepcount)+"_Duration",
+                name=name,
+                attachedToRef=self._SUBTASK_PREFIX + str(
+                    stepcount - len(options)) + '_' + str(
+                    subchaincount) + self._1_SUFFIX,
+                nsmap=self._ns.NSMAP)
+            timerEvent = etree.SubElement(
+                boundaryEvent,
+                self._ns.semantic + self._TIMER_EVENT_DEF_SUFFIX)
+            timeDuration = etree.SubElement(
+                timerEvent, self._ns.semantic + self._TIME_DURATION_SUFFIX)
+            timeDuration.attrib[
+                QName(self._ns.xsi_NAMESPACE, self._TYPE_KEY)] = \
+                _SEMANTIC_STR + ':' + self._TFORMALEXPRESSION
+            timeDuration.text = getMaxDurationAsString(timer)
+            # Set the current task as the last task of the chain
             lastTask = subTask
             # iv)
             incoming = etree.SubElement(
@@ -443,13 +546,23 @@ class BPMN:
         """
         substepcount = 1
         for step in chain[1:]:
+            stepimpl = step.get(self._PROCESS_STEP_IMPLEMENTATION)
+            if stepimpl == self._MANUAL_TASK:
+                steptype = self._MANUAL_TASK_SUFFIX
+            elif stepimpl == self._SERVICE_TASK:
+                steptype = self._SERVICE_TASK_SUFFIX
+            else:
+                steptype = self._TASK_SUFFIX
+            timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
+                     step.get(self._PROCESS_STEP_DURATION_MAX),
+                     step.get(self._PROCESS_STEP_DURATION_TYPE))
             substepcount += 1
             curr_id = str(stepcount - len(options)) + '_' + \
                 str(subchaincount) + '_' + str(substepcount)
             prev_id = str(stepcount - len(options)) + '_' + \
                 str(subchaincount) + '_' + str(substepcount - 1)
             subTask = etree.SubElement(
-                process, self._ns.semantic + self._TASK_SUFFIX,
+                process, self._ns.semantic + steptype,
                 id=self._SUBTASK_PREFIX + curr_id,
                 name=step.get(self._PROCESS_STEP_TITLE),
                 nsmap=self._ns.NSMAP)
@@ -467,14 +580,31 @@ class BPMN:
                              sourceRef=self._SUBTASK_PREFIX + prev_id,
                              targetRef=self._SUBTASK_PREFIX + curr_id,
                              nsmap=self._ns.NSMAP)
+            name = f'{_MIN_STR}:{timer[0]}, {_MAX_STR}:{timer[1]} {timer[2]}'
+            boundaryEvent = etree.SubElement(
+                process, self._ns.semantic + self._BOUNDARY_EVENT_SUFFIX,
+                id=self._TIMER_PREFIX + curr_id,
+                # name=self._TASK_PREFIX + str(stepcount)+"_Duration",
+                name=name,
+                attachedToRef=self._SUBTASK_PREFIX + curr_id,
+                nsmap=self._ns.NSMAP)
+            timerEvent = etree.SubElement(
+                boundaryEvent,
+                self._ns.semantic + self._TIMER_EVENT_DEF_SUFFIX)
+            timeDuration = etree.SubElement(
+                timerEvent, self._ns.semantic + self._TIME_DURATION_SUFFIX)
+            timeDuration.attrib[
+                QName(self._ns.xsi_NAMESPACE, self._TYPE_KEY)] = \
+                _SEMANTIC_STR + ':' + self._TFORMALEXPRESSION
+            timeDuration.text = getMaxDurationAsString(timer)
             # Set this task as the lastTask so that it can used in the next
             # iteration as the previous node
             lastTask = subTask
         return lastTask
 
     def _addMergeNodes(self, options, chains, process, allnodes, stepcount,
-                       stepname, isEndNode):
-        task = etree.SubElement(process, self._ns.semantic + self._TASK_SUFFIX,
+                       stepname, steptype, timer, isEndNode):
+        task = etree.SubElement(process, self._ns.semantic + steptype,
                                 id=self._TASK_PREFIX + str(stepcount),
                                 name=stepname, nsmap=self._ns.NSMAP)
         subchaincount = 0
@@ -482,6 +612,22 @@ class BPMN:
             task, self._ns.semantic + self._OUTGOING_SUFFIX,
             nsmap=self._ns.NSMAP)
         outgoing.text = self._SEQUENCE_FLOW_PREFIX + str(stepcount)
+        name = f'{_MIN_STR}:{timer[0]}, {_MAX_STR}:{timer[1]} {timer[2]}'
+        boundaryEvent = etree.SubElement(
+            process, self._ns.semantic + self._BOUNDARY_EVENT_SUFFIX,
+            id=self._TIMER_PREFIX + str(stepcount),
+            # name=self._TASK_PREFIX + str(stepcount)+"_Duration",
+            name=name,
+            attachedToRef=self._TASK_PREFIX + str(stepcount),
+            nsmap=self._ns.NSMAP)
+        timerEvent = etree.SubElement(
+            boundaryEvent, self._ns.semantic + self._TIMER_EVENT_DEF_SUFFIX)
+        timeDuration = etree.SubElement(
+            timerEvent, self._ns.semantic + self._TIME_DURATION_SUFFIX)
+        timeDuration.attrib[
+            QName(self._ns.xsi_NAMESPACE, self._TYPE_KEY)] = \
+            _SEMANTIC_STR + ':' + self._TFORMALEXPRESSION
+        timeDuration.text = getMaxDurationAsString(timer)
         for k in chains:
             chain = chains.get(k)
             subchaincount += 1
@@ -504,8 +650,40 @@ class BPMN:
                              targetRef=self._TASK_PREFIX + str(stepcount),
                              nsmap=self._ns.NSMAP)
 
+    def _getChainHeights(self, options, chains, stepcount, offset):
+        subchaincount = 0
+        chainHeights = []
+        for k in chains:
+            steps = chains.get(k)
+            step = steps[0]
+            maxChainHeight = 0
+            stepname = step.get(self._PROCESS_STEP_TITLE)
+            rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
+            rounded_height = int(self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
+            subchaincount += 1
+            if len(steps) > 1:
+                substepcount = 1
+                for step in steps[1:]:
+                    substepcount += 1
+                    stepname = step.get(self._PROCESS_STEP_TITLE)
+                    rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
+                    rounded_height = int(
+                        self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
+                    if rounded_height > maxChainHeight:
+                        maxChainHeight = rounded_height
+            else:
+                stepname = step.get(self._PROCESS_STEP_TITLE)
+                rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
+                rounded_height = int(self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
+                maxChainHeight = rounded_height
+
+            chainHeights.append(maxChainHeight)
+        return chainHeights
+
     def _addBranchNodeShapes(self, options, chains, BPMNPlane, stepcount,
-                             offset, boxHeightFactor, xcurr):
+                             offset, xcurr):
+        chainHeights = self._getChainHeights(
+            options, chains, stepcount, offset)
         # Add the ExclusiveGateway shape
         mainflownodes = stepcount - len(options)
         BPMNShape = etree.SubElement(
@@ -562,10 +740,15 @@ class BPMN:
         xstart = xcurr + self._WIDTH_ARROW + self._WIDTH_RHOMBUS
         xend = xstart + self._WIDTH_ARROW
         maxChainLength = 1
+        gap = self._HEIGHT_LABEL
+
         for k in chains:
             steps = chains.get(k)
             step = steps[0]
             subchaincount += 1
+            stepname = step.get(self._PROCESS_STEP_TITLE)
+            rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
+            rounded_height = int(self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
             BPMNShape = etree.SubElement(
                 BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
                 id=self._SUBTASK_PREFIX + str(
@@ -579,8 +762,9 @@ class BPMN:
                 x=str(xend),
                 y=str(self._Y_SHAPE + ymove),
                 width=str(self._WIDTH_TASK),
-                height=str(round(
-                    self._MULTIPLIER_BOX_HEIGHT * boxHeightFactor)),
+                # height=str(round(
+                #   self._MULTIPLIER_BOX_HEIGHT * boxHeightFactor)),
+                height=str(rounded_height),
                 nsmap=self._ns.NSMAP)
             if subchaincount == 1:
                 BPMNEdge = etree.SubElement(
@@ -608,6 +792,34 @@ class BPMN:
                                  y=str(self._Y_LABEL),
                                  width=str(self._WIDTH_LABEL),
                                  height=str(self._HEIGHT_LABEL),
+                                 nsmap=self._ns.NSMAP)
+
+                # add timer icon in first branched node first line
+                id_ = f'{self._SUBTASK_PREFIX}{mainflownodes}_' \
+                      f'{subchaincount}_1_Timer_{mainflownodes}_' \
+                      f'{subchaincount}_1'
+                BPMNShape = etree.SubElement(
+                    BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
+                    id=id_,
+                    bpmnElement=self._TIMER_PREFIX + str(
+                        mainflownodes) + '_' + str(subchaincount) + '_1',
+                    nsmap=self._ns.NSMAP)
+                etree.SubElement(
+                    BPMNShape, self._ns.dc + self._BOUNDS_SUFFIX,
+                    x=str(xend + self._TASK_WIDTH - 15),
+                    y=str(self._Y_LABEL_VARIANT + rounded_height + 10),
+                    width=str(32),
+                    height=str(32),
+                    nsmap=self._ns.NSMAP)
+                BPMNLabel = etree.SubElement(
+                    BPMNShape, self._ns.bpmndi + self._LABEL_SUFFIX,
+                    nsmap=self._ns.NSMAP)
+                y = str(self._Y_LABEL_VARIANT + rounded_height + 32)
+                etree.SubElement(BPMNLabel, self._ns.dc + self._BOUNDS_SUFFIX,
+                                 x=str(xend + 30),
+                                 y=y,
+                                 width=str(self._WIDTH_LABEL_VARIANT),
+                                 height=str(self._HEIGHT_LABEL_VARIANT),
                                  nsmap=self._ns.NSMAP)
             else:
                 BPMNEdge = etree.SubElement(
@@ -639,12 +851,49 @@ class BPMN:
                     width=str(self._WIDTH_LABEL),
                     height=str(self._HEIGHT_LABEL),
                     nsmap=self._ns.NSMAP)
+
+                # add timer icon in first branched node all other lines
+                BPMNShape = etree.SubElement(
+                    BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
+                    id=self._SUBTASK_PREFIX + str(
+                        mainflownodes) + '_' + str(
+                        subchaincount) + '_1' + '_Timer_' + str(
+                        mainflownodes) + '_' + str(
+                        subchaincount) + '_1',
+                    bpmnElement=self._TIMER_PREFIX + str(
+                        mainflownodes) + '_' + str(
+                        subchaincount) + '_1',
+                    nsmap=self._ns.NSMAP)
+                etree.SubElement(
+                    BPMNShape, self._ns.dc + self._BOUNDS_SUFFIX,
+                    x=str(xend + self._TASK_WIDTH - 15),
+                    y=str(ymove + self._Y_LABEL_VARIANT + rounded_height + 10),
+                    width=str(32),
+                    height=str(32),
+                    nsmap=self._ns.NSMAP)
+                BPMNLabel = etree.SubElement(
+                    BPMNShape, self._ns.bpmndi + self._LABEL_SUFFIX,
+                    nsmap=self._ns.NSMAP)
+                y = str(ymove + self._Y_LABEL_VARIANT + rounded_height + 32)
+                etree.SubElement(BPMNLabel, self._ns.dc + self._BOUNDS_SUFFIX,
+                                 x=str(xend + 30),
+                                 y=y,
+                                 width=str(self._WIDTH_LABEL_VARIANT),
+                                 height=str(self._HEIGHT_LABEL_VARIANT),
+                                 nsmap=self._ns.NSMAP)
+
             if len(steps) > 1:
                 if len(steps) > maxChainLength:
                     maxChainLength = len(steps)
                 substepcount = 1
                 for step in steps[1:]:
                     substepcount += 1
+
+                    stepname = step.get(self._PROCESS_STEP_TITLE)
+                    rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
+                    rounded_height = int(
+                        self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
+
                     curr_subtask_id = str(mainflownodes) + '_' + \
                         str(subchaincount) + '_' + str(substepcount)
                     prev_subtask_id = str(mainflownodes) + '_' + \
@@ -658,14 +907,14 @@ class BPMN:
                         nsmap=self._ns.NSMAP)
                     xnew = xstart + (self._WIDTH_ARROW + self._WIDTH_TASK) * \
                         (substepcount - 1)
-                    height = str(round(
-                        self._MULTIPLIER_BOX_HEIGHT * boxHeightFactor))
+                    xcurr = xnew + (self._WIDTH_ARROW + self._WIDTH_TASK)
+
                     etree.SubElement(
                         BPMNShape, self._ns.dc + self._BOUNDS_SUFFIX,
                         x=str(xnew + self._WIDTH_ARROW),
                         y=str(self._Y_SHAPE + ymove),
                         width=str(self._WIDTH_TASK),
-                        height=height,
+                        height=str(rounded_height),
                         nsmap=self._ns.NSMAP)
                     bpmn_edge_id = self._SEQUENCE_FLOW_PREFIX + \
                         curr_subtask_id + self._DI_SUFFIX
@@ -692,14 +941,42 @@ class BPMN:
                         width=str(self._WIDTH_LABEL),
                         height=str(self._HEIGHT_LABEL),
                         nsmap=self._ns.NSMAP)
-            gap = self._HEIGHT_LABEL
-            ymove += gap + round(
-                self._MULTIPLIER_BOX_HEIGHT * boxHeightFactor)
-        return ymove
+                    # Add timer icon in branched nodes
+                    id_ = f'{self._SUBTASK_PREFIX}{curr_subtask_id}_Timer_' \
+                          f'{curr_subtask_id}'
+                    BPMNShape = etree.SubElement(
+                        BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
+                        id=id_,
+                        bpmnElement=self._TIMER_PREFIX + curr_subtask_id,
+                        nsmap=self._ns.NSMAP)
+                    y = str(
+                        ymove + self._Y_LABEL_VARIANT + rounded_height + 10)
+                    etree.SubElement(
+                        BPMNShape, self._ns.dc + self._BOUNDS_SUFFIX,
+                        x=str(xcurr - 15),
+                        y=y,
+                        width=str(32),
+                        height=str(32),
+                        nsmap=self._ns.NSMAP)
+                    BPMNLabel = etree.SubElement(
+                        BPMNShape, self._ns.bpmndi + self._LABEL_SUFFIX,
+                        nsmap=self._ns.NSMAP)
+                    y = str(
+                        ymove + self._Y_LABEL_VARIANT + rounded_height + 32)
+                    etree.SubElement(BPMNLabel,
+                                     self._ns.dc + self._BOUNDS_SUFFIX,
+                                     x=str(xcurr - self._TASK_WIDTH + 30),
+                                     y=y,
+                                     width=str(self._WIDTH_LABEL_VARIANT),
+                                     height=str(self._HEIGHT_LABEL_VARIANT),
+                                     nsmap=self._ns.NSMAP)
+
+            ymove += gap + chainHeights[subchaincount - 1]
+        return ymove, chainHeights
 
     def _addMergeNodeShapes(self, options, chains, BPMNPlane, stepcount,
-                            offset, boxHeightFactor, stepname,
-                            maxBranchLength, xcurr):
+                            offset, chainHeights, maxBranchLength, xcurr,
+                            rounded_height):
         head = self._TASK_PREFIX
         xstart = xcurr + self._WIDTH_ARROW + \
             self._WIDTH_RHOMBUS + (self._WIDTH_ARROW + self._WIDTH_TASK)
@@ -709,6 +986,7 @@ class BPMN:
         for k in chains:
             chain = chains.get(k)
             subchaincount += 1
+            ymove = chainHeights[subchaincount - 1]
             currstart = xstart + (len(chain) - 1) * \
                 (self._WIDTH_ARROW + self._WIDTH_TASK)
             xend = xstart + (maxBranchLength - 1) * \
@@ -754,9 +1032,7 @@ class BPMN:
                     width=str(self._WIDTH_LABEL),
                     height=str(self._HEIGHT_LABEL),
                     nsmap=self._ns.NSMAP)
-            gap = self._HEIGHT_LABEL
-            ymove += gap + round(
-                self._MULTIPLIER_BOX_HEIGHT * boxHeightFactor)
+
         BPMNShape = etree.SubElement(
             BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
             id=head + str(stepcount) + self._DI_SUFFIX,
@@ -767,15 +1043,11 @@ class BPMN:
             x=str(xend),
             y=str(self._Y_START - self._OFFSET_BOUNDS),
             width=str(self._WIDTH_TASK),
-            height=str(round(
-                self._MULTIPLIER_BOX_HEIGHT_VARIANT * boxHeightFactor)),
+            height=str(rounded_height),
             nsmap=self._ns.NSMAP)
 
     def _handlePlainNodeShapes(self, data, options, BPMNPlane, stepcount,
-                               offset, planeHeight, xcurr):
-        stepname = self._process_steps[
-            stepcount - 1].get(self._PROCESS_STEP_TITLE)
-        boxHeightFactor = len(stepname) / self._DIVISOR_BOX_HEIGHT
+                               offset, planeHeight, xcurr, rounded_height):
         if len(options) == 0:
             BPMNShape = etree.SubElement(
                 BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
@@ -787,11 +1059,9 @@ class BPMN:
                 x=str(xcurr + self._WIDTH_ARROW),
                 y=str(self._Y_SHAPE_VARIANT),
                 width=str(self._WIDTH_TASK),
-                height=str(round(
-                    self._MULTIPLIER_BOX_HEIGHT_VARIANT * boxHeightFactor)),
+                height=str(rounded_height),
                 nsmap=self._ns.NSMAP)
-            new_plane_height = \
-                self._MULTIPLIER_BOX_HEIGHT_VARIANT * boxHeightFactor
+            new_plane_height = rounded_height
             if planeHeight < new_plane_height:
                 planeHeight = new_plane_height
             head = self._TASK_PREFIX
@@ -819,18 +1089,67 @@ class BPMN:
                 nsmap=self._ns.NSMAP)
             maxchainlength = 0
             xcurr += self._WIDTH_ARROW + self._WIDTH_TASK
+
+            # add timer icon main flow
+            BPMNShape = etree.SubElement(
+                BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
+                id=f'{self._TASK_PREFIX}{stepcount}_Timer_{stepcount}',
+                bpmnElement=self._TIMER_PREFIX + str(stepcount),
+                nsmap=self._ns.NSMAP)
+            etree.SubElement(
+                BPMNShape, self._ns.dc + self._BOUNDS_SUFFIX,
+                x=str(xcurr - 15),
+                y=str(self._Y_LABEL_VARIANT + rounded_height + 10),
+                width=str(32),
+                height=str(32),
+                nsmap=self._ns.NSMAP)
+            BPMNLabel = etree.SubElement(
+                BPMNShape, self._ns.bpmndi + self._LABEL_SUFFIX,
+                nsmap=self._ns.NSMAP)
+            y = str(self._Y_LABEL_VARIANT + rounded_height + 32)
+            etree.SubElement(BPMNLabel, self._ns.dc + self._BOUNDS_SUFFIX,
+                             x=str(xcurr - self._TASK_WIDTH + 30),
+                             y=y,
+                             width=str(self._WIDTH_LABEL_VARIANT),
+                             height=str(self._HEIGHT_LABEL_VARIANT),
+                             nsmap=self._ns.NSMAP)
+
         else:
             chains, maxchainlength = self.group_options(options)
-            branchHeight = self._addBranchNodeShapes(
-                options, chains, BPMNPlane, stepcount, offset,
-                boxHeightFactor, xcurr)
+            branchHeight, chainHeights = self._addBranchNodeShapes(
+                options, chains, BPMNPlane, stepcount, offset, xcurr)
             self._addMergeNodeShapes(options, chains, BPMNPlane, stepcount,
-                                     offset, boxHeightFactor, stepname,
-                                     maxchainlength, xcurr)
+                                     offset, chainHeights,
+                                     maxchainlength, xcurr, rounded_height)
             xcurr += (maxchainlength + 1) * self._WIDTH_TASK + \
                 (maxchainlength + 3) * self._WIDTH_ARROW + self._WIDTH_RHOMBUS
             if planeHeight < branchHeight:
                 planeHeight = branchHeight
+
+            # Add timer icon main flow after branch
+            BPMNShape = etree.SubElement(
+                BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
+                id=f'{self._TASK_PREFIX}{stepcount}_Timer_{stepcount}',
+                bpmnElement=self._TIMER_PREFIX + str(stepcount),
+                nsmap=self._ns.NSMAP)
+            etree.SubElement(
+                BPMNShape, self._ns.dc + self._BOUNDS_SUFFIX,
+                x=str(xcurr - 15),
+                y=str(self._Y_LABEL_VARIANT + rounded_height + 10),
+                width=str(32),
+                height=str(32),
+                nsmap=self._ns.NSMAP)
+            BPMNLabel = etree.SubElement(
+                BPMNShape, self._ns.bpmndi + self._LABEL_SUFFIX,
+                nsmap=self._ns.NSMAP)
+            y = str(self._Y_LABEL_VARIANT + rounded_height + 32)
+            etree.SubElement(BPMNLabel, self._ns.dc + self._BOUNDS_SUFFIX,
+                             x=str(xcurr - self._TASK_WIDTH + 30),
+                             y=y,
+                             width=str(self._WIDTH_LABEL_VARIANT),
+                             height=str(self._HEIGHT_LABEL_VARIANT),
+                             nsmap=self._ns.NSMAP)
+
         return planeHeight, maxchainlength, xcurr
 
     def _appendShapesAndEdges(self, BPMNPlane, data):
@@ -884,11 +1203,20 @@ class BPMN:
             height=str(self._HEIGHT_LABEL),
             nsmap=self._ns.NSMAP)
         xcurr += self._WIDTH_START_EVENT + self._WIDTH_ARROW
+        rounded_heights = []
+        timers = []
         for step_num, step in self._process_steps.items():
             stepcount += 1
             if step.get(self._PROCESS_STEP_TITLE) is not None:
+                timers.append((
+                    step.get(self._PROCESS_STEP_DURATION_MIN),
+                    step.get(self._PROCESS_STEP_DURATION_MAX),
+                    step.get(self._PROCESS_STEP_DURATION_TYPE)))
                 stepname = step.get(self._PROCESS_STEP_TITLE)
-                boxHeightFactor = len(stepname) / self._DIVISOR_BOX_HEIGHT
+                rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
+                rounded_height = int(self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
+                rounded_heights.append(rounded_height)
+
                 if stepcount == 1:
                     BPMNShape = etree.SubElement(
                         BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
@@ -896,9 +1224,6 @@ class BPMN:
                             stepcount) + self._DI_SUFFIX,
                         bpmnElement=self._TASK_PREFIX + str(stepcount),
                         nsmap=self._ns.NSMAP)
-                    height = self._MULTIPLIER_BOX_HEIGHT_VARIANT_2 * \
-                        boxHeightFactor
-                    rounded_height = round(height)
                     etree.SubElement(
                         BPMNShape, self._ns.dc + self._BOUNDS_SUFFIX,
                         x=str(xcurr),
@@ -908,6 +1233,34 @@ class BPMN:
                         nsmap=self._ns.NSMAP)
                     allnodes.append(self._TASK_PREFIX + str(stepcount))
                     xcurr += self._WIDTH_TASK
+
+                    # add timer icon
+                    id_ = f'{self._TASK_PREFIX}{stepcount}_Timer_{stepcount}'
+                    BPMNShape = etree.SubElement(
+                        BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
+                        id=id_,
+                        bpmnElement=self._TIMER_PREFIX + str(stepcount),
+                        nsmap=self._ns.NSMAP)
+                    etree.SubElement(
+                        BPMNShape, self._ns.dc + self._BOUNDS_SUFFIX,
+                        x=str(xcurr - 15),
+                        y=str(self._Y_LABEL_VARIANT + rounded_height + 10),
+                        width=str(32),
+                        height=str(32),
+                        nsmap=self._ns.NSMAP)
+                    BPMNLabel = etree.SubElement(
+                        BPMNShape, self._ns.bpmndi + self._LABEL_SUFFIX,
+                        nsmap=self._ns.NSMAP)
+                    y = str(
+                        self._Y_LABEL_VARIANT + rounded_height + 32)
+                    etree.SubElement(BPMNLabel,
+                                     self._ns.dc + self._BOUNDS_SUFFIX,
+                                     x=str(xcurr - self._TASK_WIDTH + 30),
+                                     y=y,
+                                     width=str(self._WIDTH_LABEL_VARIANT),
+                                     height=str(self._HEIGHT_LABEL_VARIANT),
+                                     nsmap=self._ns.NSMAP)
+
                 else:
                     if step.get(self._PROCESS_STEP_CHILD) == \
                             self._PROCESS_STEP_CHILD_YES:
@@ -917,7 +1270,7 @@ class BPMN:
                             self._handlePlainNodeShapes(
                                 data, options, BPMNPlane, stepcount,
                                 self._OFFSET_HANDLE_PLAIN_NODE_SHAPES,
-                                planeHeight, xcurr)
+                                planeHeight, xcurr, rounded_height)
                         options = []
                         totalchainlength += maxBranchLength
                         allnodes.append(self._TASK_PREFIX + str(stepcount))
@@ -970,7 +1323,7 @@ class BPMN:
         stepcount = 0
         maxtextheight = 0
         xcurr = self._OFFSET_X_DOC
-        doc_y = planeHeight + self._OFFSET_X_DOC
+        doc_y = planeHeight + self._OFFSET_Y_DOC
         evidenceRowsStarts = [doc_y]
         maxEvidencesPerRow = int(int(boundsWidth) / self._OFFSET_DOC_TAB)
         for evidence_num, evidence in self._process_evidences.items():
