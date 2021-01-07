@@ -75,7 +75,7 @@ class Service:
             result = ErrorCode.SITE_API_ERROR
         else:
             site_response_results = site_response['query']['results']
-            if len(site_response_results) == 1:
+            if len(site_response_results) >= 1:
                 result = next(iter(site_response_results))
             else:
                 result = None
