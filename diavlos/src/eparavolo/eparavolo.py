@@ -86,6 +86,6 @@ class eParavolo:
         else:
             response_dict = zeep.helpers.serialize_object(
                 type_info_output_record)
-            response_dict['price'] = int(response_dict['price'])
+            response_dict['price'] = float(response_dict['price'])
             result = response_dict
         return result
