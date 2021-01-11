@@ -35,7 +35,9 @@ def getMaxDurationAsString(timer):
     except KeyError:
         return ''
     max_duration = timer[1]
-    return template.format(max_duration)
+    min_duration = timer[0]
+    out=max(int(max_duration),int(min_duration))
+    return template.format(out)
 
 
 class BPMNNamespaces:
@@ -115,6 +117,7 @@ class BPMN:
     _PROCESS_EVIDENCE_PREFIX = 'process_evidence'
     # Process steps
     _PROCESS_STEPS_STR = 'Process steps'
+    _PROCESS_STEPS_DIGITAL_STR = 'Process steps digital'
     _PROCESS_STEP_PREFIX = 'process_step'
     _PROCESS_STEP_TITLE = None
     _PROCESS_STEP_IMPLEMENTATION = None
@@ -125,6 +128,9 @@ class BPMN:
     _PROCESS_STEP_DURATION_MAX = 'process_step_duration_max'
     _PROCESS_STEP_DURATION_MIN = 'process_step_duration_min'
     _PROCESS_STEP_DURATION_TYPE = 'process_step_duration_type'
+    _PROCESS_STEP_DIGITAL_DURATION_MAX = 'process_step_digital_duration_max'
+    _PROCESS_STEP_DIGITAL_DURATION_MIN = 'process_step_digital_duration_min'
+    _PROCESS_STEP_DIGITAL_DURATION_TYPE = 'process_step_digital_duration_type'
     _TFORMALEXPRESSION = 'tFormalExpression'
 
     # X
@@ -224,6 +230,7 @@ class BPMN:
         self._PROCESS_STEP_CHILD = f'{process_step_prefix}_{_CHILD_STR}'
         self._PROCESS_STEP_PREVIOUS_CHILD = f'{process_step_prefix}_'\
             f'{_PREV_CHILD_SUFFIX}'
+
         self._ns = BPMNNamespaces(
             semantic=bracketize(self._NAMESPACE[self._SEMANTIC_KEY]),
             bpmndi=bracketize(self._NAMESPACE[self._BPMNDI_KEY]),
@@ -370,9 +377,15 @@ class BPMN:
         else:
             steptype = self._TASK_SUFFIX
         step = process_steps[stepcount]
-        timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
+        if self._PROCESS_STEPS_STR==self._PROCESS_STEPS_DIGITAL_STR:
+          timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
+                 step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
+                 step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
+        else:
+          timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
                  step.get(self._PROCESS_STEP_DURATION_MAX),
                  step.get(self._PROCESS_STEP_DURATION_TYPE))
+          
         # If no BranchNodes are found
         if len(options) == 0:
             task = etree.SubElement(process,
@@ -466,9 +479,16 @@ class BPMN:
                 steptype = self._SERVICE_TASK_SUFFIX
             else:
                 steptype = self._TASK_SUFFIX
-            timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
-                     step.get(self._PROCESS_STEP_DURATION_MAX),
-                     step.get(self._PROCESS_STEP_DURATION_TYPE))
+
+            if self._PROCESS_STEPS_STR==self._PROCESS_STEPS_DIGITAL_STR:
+              timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
+                    step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
+                    step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
+            else:
+              timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
+                    step.get(self._PROCESS_STEP_DURATION_MAX),
+                    step.get(self._PROCESS_STEP_DURATION_TYPE))
+
             # i)
             outgoing = etree.SubElement(
                 exclusiveGateway,
@@ -725,6 +745,7 @@ class BPMN:
             BPMNEdge, xcurr, self._Y_START)
         self._create_waypoint(
             BPMNEdge, xcurr + self._WIDTH_ARROW, self._Y_START)
+
         BPMNLabel = etree.SubElement(
             BPMNEdge, self._ns.bpmndi + self._LABEL_SUFFIX,
             nsmap=self._ns.NSMAP)
@@ -977,6 +998,7 @@ class BPMN:
     def _addMergeNodeShapes(self, options, chains, BPMNPlane, stepcount,
                             offset, chainHeights, maxBranchLength, xcurr,
                             rounded_height):
+        gap = self._HEIGHT_LABEL
         head = self._TASK_PREFIX
         xstart = xcurr + self._WIDTH_ARROW + \
             self._WIDTH_RHOMBUS + (self._WIDTH_ARROW + self._WIDTH_TASK)
@@ -986,7 +1008,6 @@ class BPMN:
         for k in chains:
             chain = chains.get(k)
             subchaincount += 1
-            ymove = chainHeights[subchaincount - 1]
             currstart = xstart + (len(chain) - 1) * \
                 (self._WIDTH_ARROW + self._WIDTH_TASK)
             xend = xstart + (maxBranchLength - 1) * \
@@ -1032,7 +1053,7 @@ class BPMN:
                     width=str(self._WIDTH_LABEL),
                     height=str(self._HEIGHT_LABEL),
                     nsmap=self._ns.NSMAP)
-
+            ymove += gap + chainHeights[subchaincount - 1]
         BPMNShape = etree.SubElement(
             BPMNPlane, self._ns.bpmndi + self._SHAPE_SUFFIX,
             id=head + str(stepcount) + self._DI_SUFFIX,
@@ -1045,6 +1066,7 @@ class BPMN:
             width=str(self._WIDTH_TASK),
             height=str(rounded_height),
             nsmap=self._ns.NSMAP)
+        
 
     def _handlePlainNodeShapes(self, data, options, BPMNPlane, stepcount,
                                offset, planeHeight, xcurr, rounded_height):
@@ -1208,10 +1230,16 @@ class BPMN:
         for step_num, step in self._process_steps.items():
             stepcount += 1
             if step.get(self._PROCESS_STEP_TITLE) is not None:
-                timers.append((
-                    step.get(self._PROCESS_STEP_DURATION_MIN),
-                    step.get(self._PROCESS_STEP_DURATION_MAX),
-                    step.get(self._PROCESS_STEP_DURATION_TYPE)))
+                if self._PROCESS_STEPS_STR==self._PROCESS_STEPS_DIGITAL_STR:
+                  timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
+                          step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
+                          step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
+                else:
+                  timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
+                          step.get(self._PROCESS_STEP_DURATION_MAX),
+                          step.get(self._PROCESS_STEP_DURATION_TYPE))
+
+                timers.append(timer)
                 stepname = step.get(self._PROCESS_STEP_TITLE)
                 rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
                 rounded_height = int(self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
