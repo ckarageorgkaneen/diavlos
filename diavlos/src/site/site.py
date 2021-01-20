@@ -26,7 +26,6 @@ class Site:
         self.__client = None
         self.__config = None
         self._logged_in = False
-        self.pages = self._client.pages
         self.categories = self._client.categories
         self.api = self._client.api
         self.get = self._client.get
@@ -44,6 +43,13 @@ class Site:
             with open(self._CONFIG_FILE) as f:
                 self.__config = yaml.safe_load(f)
         return self.__config
+
+    def pages(self, name):
+        try:
+            return self._client.pages[name]
+        except mwclient.errors.InvalidPageTitle as e:
+            message = f'Page title: {name}. {str(e)}'
+            _error(message)
 
     def auto_login(self):
         self._client.login(self._config['username'], self._config['password'])

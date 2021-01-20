@@ -229,7 +229,7 @@ class Organization:
     def _get_site_page(self, name, is_category=False):
         try:
             return self._site.categories[name] if is_category else \
-                self._site.pages[name]
+                self._site.pages(name)
         except Exception as e:
             logger.error(e, name)
             return None

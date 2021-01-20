@@ -61,7 +61,7 @@ class Service:
     def _page(self, name):
         if self.NAMESPACE_PREFIX not in name:
             name = f'{self.NAMESPACE_PREFIX}{name}'
-        return self._site.pages[name]
+        return self._site.pages(name)
 
     def _name_by_id(self, id_, is_uuid=False):
         property_name = self.UUID_PROPERTY_NAME \
@@ -87,7 +87,7 @@ class Service:
             page_title = page.page_title
             logger.debug(page_title)
             new_title = f'{self.NAMESPACE_PREFIX}{page_title}'
-            new_page = self._site.pages[new_title]
+            new_page = self._site.pages(new_title)
             try:
                 if not new_page.exists:
                     page.move(new_title, no_redirect=True)
