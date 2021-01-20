@@ -25,6 +25,7 @@ class Site:
     def __init__(self):
         self.__client = None
         self.__config = None
+        self._logged_in = False
         self.pages = self._client.pages
         self.categories = self._client.categories
         self.api = self._client.api
@@ -47,9 +48,13 @@ class Site:
     def auto_login(self):
         self._client.login(self._config['username'], self._config['password'])
 
-    def login(self, username, password):
+    def login(self, username, password, force=False):
+        if self._logged_in and not force:
+            return
         try:
             self._client.login(username, password)
         except (mwclient.errors.LoginError,
                 mwclient.errors.APIError) as e:
             _error(str(e))
+        else:
+            self._logged_in = True
