@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+import yaml
+import logging
+import pickle
+import requests
+
+from diavlos.data import IN_FILES
+
+logging.basicConfig()
+logger = logging.getLogger('import_govgr_services')
+logger.setLevel(level=logging.DEBUG)
+
+DIAVLOS_ADD_SERVICE_ENDPOINT = \
+    'http://reg-diavlos.gov.gr:5000/api/service/add'
+DIAVLOS_ADD_REQUESTS_PICKLE = 'govgr_services_diavlos_add_requests.pickle'
+
+
+def fetch_add_requests():
+    with open(DIAVLOS_ADD_REQUESTS_PICKLE, 'rb') as f:
+        requests = pickle.load(f)
+    return requests
+
+
+def get_request_auth():
+    with open(IN_FILES['site_config']) as f:
+        site_config = yaml.safe_load(f)
+    auth = (site_config['username'], site_config['password'])
+    return auth
+
+
+def import_govgr_services(add_requests, auth):
+    for i, request in enumerate(add_requests):
+        r = requests.post(
+            DIAVLOS_ADD_SERVICE_ENDPOINT, json=request, auth=auth)
+        try:
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            logger.debug(e)
+            logger.debug(f'Request: {request}')
+        else:
+            logger.debug(f"{i + 1}: {request['name']} added.")
+
+
+def main():
+    add_requests = fetch_add_requests()
+    auth = get_request_auth()
+    import_govgr_services(add_requests, auth)
+
+
+if __name__ == '__main__':
+    main()

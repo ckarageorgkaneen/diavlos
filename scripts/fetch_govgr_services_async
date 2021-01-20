@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+import aiohttp
+import asyncio
+import logging
+import pickle
+import pprint
+import requests
+
+logging.basicConfig()
+logger = logging.getLogger('fetch_govgr_services')
+logger.setLevel(level=logging.DEBUG)
+
+# Endpoints
+GOVGR_SERVICES_ENDPOINT = 'https://www.gov.gr/api/v1/services/'
+GOVGR_SUBCATEGORIES_ENDPOINT = 'https://www.gov.gr/api/v1/subcategories/'
+GOVGR_USEFUL_LINKS_ENDPOINT = 'https://www.gov.gr/api/v1/service-useful-links/'
+# Keys
+NAME_KEY = 'name'
+TITLE_KEY = 'title'
+URL_KEY = 'url'
+FIELDS_KEY = 'fields'
+DESCRIPTION_KEY = 'description'
+IS_G2C_KEY = 'is_g2c'
+IS_G2B_KEY = 'is_g2b'
+IS_G2G_KEY = 'is_g2g'
+FIRST_LIFE_EVENT_KEY = 'sub_category'
+SECOND_LIFE_EVENT_KEY = 'second_sub_category'
+SERVICE_ACTIONS_KEY = 'service_actions'
+USEFUL_LINKS_KEY = 'useful_links'
+# Tokens
+CITIZENS_TOKEN = 'Πολίτες'
+BUSINESSES_TOKEN = 'Επιχειρήσεις'
+GOVERNMENT_TOKEN = 'Δημόσιους φορείς'
+SOURCE_TOKEN = 'gov.gr'
+TYPE_TOKEN = 'Εξωστρεφής'
+TRIGGER_TOKEN = 'Αιτούμενη'
+CURRENT_STATUS_TOKEN = 'Υπό επεξεργασία'
+# Templates
+PROCESS_TEMPLATE = 'process'
+PROV_DIG_LOC_TEMPLATE = 'process_provision_digital_locations'
+USEFUL_LINKS_TEMPLATE = 'process_useful_links'
+# Fields
+DESCRIPTION_FIELD = 'process_description'
+PROVIDED_TO_FIELD = 'process_provided_to'
+LIFE_EVENTS_FIELD = 'process_life_events'
+SOURCE_FIELD = 'process_source'
+TYPE_FIELD = 'process_type'
+TRIGGER_FIELD = 'process_interval'
+CURRENT_STATUS_FIELD = 'process_current_status'
+PROVISION_DIGITAL_LOCATION_TITLE_FIELD = \
+    'process_provision_digital_location_title'
+PROVISION_DIGITAL_LOCATION_URL_FIELD = \
+    'process_provision_digital_location_url'
+PROVISION_DIGITAL_LOCATION_DESCRIPTION_FIELD = \
+    'process_provision_digital_location_description'
+USEFUL_LINK_TITLE_FIELD = 'process_useful_link_title'
+USEFUL_LINK_URL_FIELD = 'process_useful_link_url'
+# Files
+DIAVLOS_ADD_REQUESTS_PICKLE = 'diavlos_add_requests.pickle'
+
+
+async def fetch(session, url):
+    async with session.get(url) as response:
+        return await response.json()
+
+
+async def add_request_dict(session, govgr_service_dict):
+    request_dict = {}
+    # Add title
+    request_dict[NAME_KEY] = govgr_service_dict[TITLE_KEY]
+    fields = request_dict[FIELDS_KEY] = {}
+    # Add process template fields
+    process_templates = fields[PROCESS_TEMPLATE] = [{}]
+    process_template_instance = process_templates[0]
+    # Add description
+    if DESCRIPTION_KEY in govgr_service_dict:
+        process_template_instance[DESCRIPTION_FIELD] = govgr_service_dict[
+            DESCRIPTION_KEY]
+    # Add g2{c,b,g}
+    is_g2c = govgr_service_dict[IS_G2C_KEY]
+    is_g2b = govgr_service_dict[IS_G2B_KEY]
+    is_g2g = govgr_service_dict[IS_G2G_KEY]
+    value = ''
+    if is_g2c:
+        value += f'{CITIZENS_TOKEN},'
+    if is_g2b:
+        value += f'{BUSINESSES_TOKEN},'
+    if is_g2g:
+        value += f'{GOVERNMENT_TOKEN}'
+    process_template_instance[PROVIDED_TO_FIELD] = value.rstrip(',')
+    # Add life events
+    first_life_event_code = govgr_service_dict[FIRST_LIFE_EVENT_KEY]
+    second_life_event_code = govgr_service_dict[SECOND_LIFE_EVENT_KEY]
+    if first_life_event_code or second_life_event_code:
+        value = ''
+        if first_life_event_code:
+            url = f'{GOVGR_SUBCATEGORIES_ENDPOINT}{first_life_event_code}'
+            first_life_event = await fetch(session, url)
+            value += first_life_event[TITLE_KEY]
+        if second_life_event_code:
+            url = f'{GOVGR_SUBCATEGORIES_ENDPOINT}{second_life_event_code}'
+            second_life_event = await fetch(session, url)
+            value += second_life_event[TITLE_KEY]
+        process_template_instance[LIFE_EVENTS_FIELD] = value.rstrip(',')
+    # Add source
+    process_template_instance[SOURCE_FIELD] = SOURCE_TOKEN
+    # Add type
+    process_template_instance[TYPE_FIELD] = TYPE_TOKEN
+    # Add trigger
+    process_template_instance[TRIGGER_FIELD] = TRIGGER_TOKEN
+    # Add current status
+    process_template_instance[CURRENT_STATUS_FIELD] = CURRENT_STATUS_TOKEN
+    # Add process provision digital locations template fields
+    service_actions = govgr_service_dict[SERVICE_ACTIONS_KEY]
+    if service_actions:
+        process_pdl_templates = fields[PROV_DIG_LOC_TEMPLATE] = []
+        for service_action in service_actions:
+            process_pdl_template_instance = {}
+            if TITLE_KEY in service_action and service_action[TITLE_KEY]:
+                process_pdl_template_instance[
+                    PROVISION_DIGITAL_LOCATION_TITLE_FIELD] = service_action[
+                    TITLE_KEY]
+            if URL_KEY in service_action and service_action[URL_KEY]:
+                process_pdl_template_instance[
+                    PROVISION_DIGITAL_LOCATION_URL_FIELD] = service_action[
+                    URL_KEY]
+            if DESCRIPTION_KEY in service_action and service_action[
+                    DESCRIPTION_KEY]:
+                process_pdl_template_instance[
+                    PROVISION_DIGITAL_LOCATION_DESCRIPTION_FIELD] = \
+                    service_action[DESCRIPTION_KEY]
+            if process_pdl_template_instance:
+                process_pdl_templates.append(process_pdl_template_instance)
+    # Add useful links template fields
+    useful_links = govgr_service_dict[USEFUL_LINKS_KEY]
+    if useful_links:
+        process_ul_templates = fields[USEFUL_LINKS_TEMPLATE] = []
+        for useful_link_code in useful_links:
+            url = f'{GOVGR_USEFUL_LINKS_ENDPOINT}{useful_link_code}'
+            useful_link = await fetch(session, url)
+            process_ul_template_instance = {}
+            if TITLE_KEY in useful_link and useful_link[TITLE_KEY]:
+                process_ul_template_instance[USEFUL_LINK_TITLE_FIELD] = \
+                    useful_link[TITLE_KEY]
+            if URL_KEY in useful_link and useful_link[URL_KEY]:
+                process_ul_template_instance[USEFUL_LINK_URL_FIELD] = \
+                    useful_link[URL_KEY]
+            if process_ul_template_instance:
+                process_ul_templates.append(process_ul_template_instance)
+    logger.debug(f'{govgr_service_dict[TITLE_KEY]} add request created.')
+    return request_dict
+
+
+def fetch_govgr_services():
+    r = requests.get(GOVGR_SERVICES_ENDPOINT)
+    r.raise_for_status()
+    return r.json()
+
+
+async def govgr_services_diavlos_add_requests(services):
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for i, service in enumerate(services):
+            tasks.append(add_request_dict(session, service))
+        requests = await asyncio.gather(*tasks, return_exceptions=True)
+    return requests
+
+
+async def main():
+    services = fetch_govgr_services()
+    requests = await govgr_services_diavlos_add_requests(services)
+    pprint.pprint(len(requests))
+    pprint.pprint(type(requests))
+    pprint.pprint(f'Number of exceptions: {sum([isinstance(r, Exception) for r in requests])}')
+    pprint.pprint('First exception:')
+    for r in requests:
+        if isinstance(r, Exception):
+            continue
+        pprint(type(r))
+    # Pickle results
+    # with open(DIAVLOS_ADD_REQUESTS_PICKLE, 'wb+') as f:
+    #     pickle.dump(requests, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+if __name__ == '__main__':
+    asyncio.run(main(), debug=True)

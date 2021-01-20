@@ -15,5 +15,6 @@ setup(
         'requests==2.22.0',
         'mwtemplates==0.4.0',
         'jsonschema==3.2.0',
+        'aiohttp==3.7.3'
     ]
 )
