@@ -30,8 +30,8 @@ class Service:
     # General
     NAME_KEY = 'name'
     FIELDS_KEY = 'fields'
-    NAMESPACE_PREFIX = 'Διαδικασία:'
-    CATEGORY_NAME = 'Διαδικασίες'
+    NAMESPACE_PREFIX = 'ΔΔ:'
+    CATEGORY_NAME = 'Κατάλογος Διαδικασιών'
     CATEGORY = f'Category:{CATEGORY_NAME}'
     TEMPLATE_NAME = 'Process'
     UUID_PROPERTY_NAME = 'Process_uuid'
