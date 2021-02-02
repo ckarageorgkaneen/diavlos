@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import re
+
+from diavlos.src.site import Site
+from diavlos.src.service import Service
+
+site = Site()
+site.auto_login()
+
+REGEX_HTML_TAGS = re.compile('<.*?>')
+
+
+def cleanhtml(string):
+    return re.sub(REGEX_HTML_TAGS, '', string)
+
+
+def main():
+    for page in site.categories[Service.CATEGORY_NAME]:
+        page.edit(cleanhtml(page.text()))
+        print(f'Removed html from {page.page_title}')
+
+
+if __name__ == '__main__':
+    main()
