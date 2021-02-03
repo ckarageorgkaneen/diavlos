@@ -1,11 +1,13 @@
 import logging
 import mwclient
+import re
+
 from mwtemplates import TemplateEditor
 
 from .error import ServiceErrorCode as ErrorCode
+from diavlos.src.bpmn import BPMN
 from diavlos.src.site import Site
 from diavlos.src.site import SiteError
-from diavlos.src.bpmn import BPMN
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +27,19 @@ def _template_text(template_name, template_instance):
         template_text += f'\n |{field_name}={field_value}'
     return f'{{{{{template_text}\n}}}}\n'
 
+
 class Service:
 
-    # General
     NAME_KEY = 'name'
     FIELDS_KEY = 'fields'
-    NAMESPACE_PREFIX = 'ΔΔ:'
+    NAMESPACE = 'ΔΔ'
+    BEING_EDITTED_NAMESPACE = 'ΥΕ'
+    TO_BE_APPROVED_NAMESPACE = 'ΠΕ'
+    TO_BE_PUBLISHED_NAMESPACE = 'ΠΔ'
+    NAMESPACE_PREFIX = f'{NAMESPACE}:'
+    REGEX_HAS_NAMESPACE_PREFIX = re.compile(
+        rf'^(?:{NAMESPACE}|{BEING_EDITTED_NAMESPACE}|'
+        rf'{TO_BE_APPROVED_NAMESPACE}|{TO_BE_PUBLISHED_NAMESPACE}):')
     CATEGORY_NAME = 'Κατάλογος Διαδικασιών'
     CATEGORY = f'Category:{CATEGORY_NAME}'
     TEMPLATE_NAME = 'Process'
@@ -40,6 +49,9 @@ class Service:
 
     def __init__(self):
         self._site = Site()
+
+    def _has_namespace_prefix(self, string):
+        return bool(re.match(self.REGEX_HAS_NAMESPACE_PREFIX, string))
 
     def _service_dict(self, name, template_editor):
         dict_ = {
@@ -59,7 +71,7 @@ class Service:
         return dict_
 
     def _page(self, name):
-        if self.NAMESPACE_PREFIX not in name:
+        if not self._has_namespace_prefix(name):
             name = f'{self.NAMESPACE_PREFIX}{name}'
         return self._site.pages(name)
 
@@ -147,6 +159,7 @@ class Service:
         return result
 
     def fetch_by_name(self, name, fetch_bpmn_digital_steps=None):
+        self.site_auto_login()
         page = self._page(name)
         if page.exists:
             page = page.resolve_redirect()
