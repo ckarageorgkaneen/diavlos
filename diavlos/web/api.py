@@ -7,19 +7,24 @@ from flask import jsonify
 from flask import request
 from flask_httpauth import HTTPBasicAuth
 
+
+from diavlos.data import IN_FILES
 from diavlos.src.eparavolo import eParavolo
 from diavlos.src.eparavolo.error import eParavoloErrorCode
 from diavlos.src.eparavolo.error import eParavoloErrorData
 from diavlos.src.helper.error import ErrorCode
+from diavlos.src.metadata import Metadata
 from diavlos.src.organization import Organization
 from diavlos.src.service import Service
 from diavlos.src.service import ServiceError
 from diavlos.src.service.error import ServiceErrorData
-from diavlos.src.metadata import Metadata
+from diavlos.src.site import Site
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
-service = Service()
+default_site = greek_site = Site()
+english_site = Site(config_file=IN_FILES['english_site_config'])
+service = Service(site=default_site)
 eparavolo = eParavolo()
 organization = Organization()
 metadata = Metadata()
@@ -166,10 +171,17 @@ def fetch_all_services():
 @app.route('/api/service')
 @make_response
 def fetch_service():
+    global default_site
     name = request.args.get('name')
     uuid = request.args.get('uuid')
     id_ = request.args.get('id')
     bpmn = request.args.get('bpmn')
+    lang = request.args.get('lang')
+    if lang == 'en' and default_site is greek_site:
+        default_site = english_site
+    if lang != 'en' and default_site is english_site:
+        default_site = greek_site
+    service.set_site(default_site)
     if bpmn == 'digital':
         fetch_bpmn_digital_steps = True
     elif bpmn == 'manual':

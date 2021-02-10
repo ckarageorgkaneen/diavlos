@@ -47,8 +47,12 @@ class Service:
     ID_PROPERTY_NAME = 'Process_id'
     BPMN_PATH = 'BPMN'
 
-    def __init__(self):
-        self._site = Site()
+    def __init__(self, site=None):
+        self._site = site or Site()
+
+    def set_site(self, site):
+        if site is not self._site:
+            self._site = site
 
     def _has_namespace_prefix(self, string):
         return bool(re.match(self.REGEX_HAS_NAMESPACE_PREFIX, string))

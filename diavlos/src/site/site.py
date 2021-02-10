@@ -18,12 +18,13 @@ def _error(message):
 
 
 class Site:
-    _CONFIG_FILE = IN_FILES['site_config']
+    _DEFAULT_CONFIG_FILE = IN_FILES['greek_site_config']
     _SCHEME = 'https'
     _PATH = '/'
 
-    def __init__(self):
+    def __init__(self, config_file=_DEFAULT_CONFIG_FILE):
         self.__client = None
+        self._config_file = config_file
         self.__config = None
         self._logged_in = False
         self.categories = self._client.categories
@@ -40,7 +41,7 @@ class Site:
     @property
     def _config(self):
         if self.__config is None:
-            with open(self._CONFIG_FILE) as f:
+            with open(self._config_file) as f:
                 self.__config = yaml.safe_load(f)
         return self.__config
 
