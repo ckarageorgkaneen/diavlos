@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import logging
-import json
 import pickle
 import requests
 
@@ -9,9 +8,9 @@ logger = logging.getLogger('fetch_govgr_services')
 logger.setLevel(level=logging.DEBUG)
 
 # Endpoints
-GOVGR_SERVICES_ENDPOINT = 'https://www.gov.gr/api/v1/services/'
-GOVGR_LIFE_EVENTS_ENDPOINT = 'https://www.gov.gr/api/v1/subcategories/'
-GOVGR_USEFUL_LINKS_ENDPOINT = 'https://www.gov.gr/api/v1/service-useful-links/'
+SERVICES_ENDPOINT = 'https://www.gov.gr/api/v1/services/?format=json'
+LIFE_EVENTS_ENDPOINT = 'https://www.gov.gr/api/v1/subcategories/?format=json'
+USEFUL_LINKS_ENDPOINT = 'https://www.gov.gr/api/v1/service-useful-links/?format=json'
 # Keys
 NAME_KEY = 'name'
 TITLE_KEY = 'title'
@@ -60,13 +59,9 @@ GOVGR_LIFE_EVENTS_JSON = 'govgr_subcategories.json'
 GOVGR_USEFUL_LINKS_JSON = 'govgr_useful_links.json'
 DIAVLOS_ADD_REQUESTS_PICKLE = 'govgr_services_diavlos_add_requests.pickle'
 # Caches
+GOVGR_SERVICES = {}
 GOVGR_LIFE_EVENTS = []
 GOVGR_USEFUL_LINKS = []
-
-
-def fetch_from_file(file):
-    with open(file) as f:
-        return json.load(f)
 
 
 def fetch_from_url(url, raise_for_http_error=False):
@@ -82,33 +77,30 @@ def fetch_from_url(url, raise_for_http_error=False):
         return r.json()
 
 
-def fetch_govgr_services(from_api=False):
-    if from_api:
-        return fetch_from_url(GOVGR_SERVICES_ENDPOINT)
-    services = fetch_from_file(GOVGR_SERVICES_JSON)
-    return services
-
-
-def fetch_life_event(id_, from_api=False):
+def fetch_govgr_info():
+    global GOVGR_SERVICES
     global GOVGR_LIFE_EVENTS
-    if from_api:
-        return fetch_from_url(GOVGR_LIFE_EVENTS_ENDPOINT + id_)
-    if not GOVGR_LIFE_EVENTS:
-        GOVGR_LIFE_EVENTS = fetch_from_file(GOVGR_LIFE_EVENTS_JSON)
-    for life_event in GOVGR_LIFE_EVENTS:
-        if id_ == life_event[ID_KEY]:
-            return life_event
-
-
-def fetch_useful_link(id_, from_api=False):
     global GOVGR_USEFUL_LINKS
-    if from_api:
-        return fetch_from_url(GOVGR_USEFUL_LINKS_ENDPOINT + id_)
-    if not GOVGR_USEFUL_LINKS:
-        GOVGR_USEFUL_LINKS = fetch_from_file(GOVGR_USEFUL_LINKS_JSON)
-    for useful_link in GOVGR_USEFUL_LINKS:
-        if id_ == useful_link[ID_KEY]:
-            return useful_link
+    GOVGR_SERVICES = fetch_from_url(SERVICES_ENDPOINT)
+    GOVGR_LIFE_EVENTS = fetch_from_url(LIFE_EVENTS_ENDPOINT)
+    GOVGR_USEFUL_LINKS = fetch_from_url(USEFUL_LINKS_ENDPOINT)
+
+
+def find_govgr_data_by_id(id_, govgr_data):
+    if not govgr_data:
+        raise RuntimeError(
+            f'govgr_data argument is empty. Should be first initialized.')
+    for data in govgr_data:
+        if id_ == data[ID_KEY]:
+            return data
+
+
+def find_life_event(id_):
+    return find_govgr_data_by_id(id_, GOVGR_LIFE_EVENTS)
+
+
+def find_useful_link(id_):
+    return find_govgr_data_by_id(id_, GOVGR_USEFUL_LINKS)
 
 
 def add_request_dict(govgr_service_dict):
@@ -141,11 +133,11 @@ def add_request_dict(govgr_service_dict):
     if first_life_event_id or second_life_event_id:
         value = ''
         if first_life_event_id:
-            first_life_event = fetch_life_event(first_life_event_id)
+            first_life_event = find_life_event(first_life_event_id)
             if first_life_event:
                 value += first_life_event[TITLE_KEY]
         if second_life_event_id:
-            second_life_event = fetch_life_event(second_life_event_id)
+            second_life_event = find_life_event(second_life_event_id)
             if second_life_event:
                 value += second_life_event[TITLE_KEY]
         if value:
@@ -184,7 +176,7 @@ def add_request_dict(govgr_service_dict):
     if useful_links:
         process_ul_templates = fields[USEFUL_LINKS_TEMPLATE] = []
         for useful_link_id in useful_links:
-            useful_link = fetch_useful_link(useful_link_id)
+            useful_link = find_useful_link(useful_link_id)
             if not useful_link:
                 continue
             process_ul_template_instance = {}
@@ -199,17 +191,17 @@ def add_request_dict(govgr_service_dict):
     return request_dict
 
 
-def govgr_services_diavlos_add_requests(services):
+def create_diavlos_service_add_requests():
     requests = []
-    for i, service in enumerate(services):
+    for i, service in enumerate(GOVGR_SERVICES):
         requests.append(add_request_dict(service))
         logger.debug(f'{i + 1}: {service[TITLE_KEY]} add request created.')
     return requests
 
 
 def main():
-    services = fetch_govgr_services()
-    requests = govgr_services_diavlos_add_requests(services)
+    fetch_govgr_info()
+    requests = create_diavlos_service_add_requests()
     logger.debug(f'Fetched {len(requests)} service requests.')
     # Pickle results
     with open(DIAVLOS_ADD_REQUESTS_PICKLE, 'wb') as f:
