@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import logging
 import pickle
 import requests
@@ -61,6 +62,12 @@ GOVGR_SERVICES = {}
 GOVGR_LIFE_EVENTS = []
 GOVGR_USEFUL_LINKS = []
 
+REGEX_HTML_TAGS = re.compile('<.*?>')
+
+
+def cleanhtml(string):
+    return re.sub(REGEX_HTML_TAGS, '', string)
+
 
 def fetch_from_url(url, raise_for_http_error=False):
     r = requests.get(url)
@@ -111,8 +118,8 @@ def add_request_dict(govgr_service_dict):
     process_template_instance = process_templates[0]
     # Add description
     if DESCRIPTION_KEY in govgr_service_dict:
-        process_template_instance[DESCRIPTION_FIELD] = govgr_service_dict[
-            DESCRIPTION_KEY]
+        process_template_instance[DESCRIPTION_FIELD] = cleanhtml(
+            govgr_service_dict[DESCRIPTION_KEY])
     # Add g2{c,b,g}
     is_g2c = govgr_service_dict[IS_G2C_KEY]
     is_g2b = govgr_service_dict[IS_G2B_KEY]
