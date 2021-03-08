@@ -32,13 +32,14 @@ class Service:
 
     NAME_KEY = 'name'
     FIELDS_KEY = 'fields'
-    NAMESPACE = 'ΔΔ'
+    PUBLISHED_NAMESPACE = 'ΔΔ'
     BEING_EDITTED_NAMESPACE = 'ΥΕ'
     TO_BE_APPROVED_NAMESPACE = 'ΠΕ'
     TO_BE_PUBLISHED_NAMESPACE = 'ΠΔ'
-    NAMESPACE_PREFIX = f'{NAMESPACE}:'
+    DEFAULT_NAMESPACE = BEING_EDITTED_NAMESPACE
+    DEFAULT_NAMESPACE_PREFIX = f'{DEFAULT_NAMESPACE}:'
     REGEX_HAS_NAMESPACE_PREFIX = re.compile(
-        rf'^(?:{NAMESPACE}|{BEING_EDITTED_NAMESPACE}|'
+        rf'^(?:{PUBLISHED_NAMESPACE}|{BEING_EDITTED_NAMESPACE}|'
         rf'{TO_BE_APPROVED_NAMESPACE}|{TO_BE_PUBLISHED_NAMESPACE}):')
     CATEGORY_NAME = 'Κατάλογος Διαδικασιών'
     CATEGORY = f'Category:{CATEGORY_NAME}'
@@ -76,7 +77,7 @@ class Service:
 
     def _page(self, name):
         if not self._has_namespace_prefix(name):
-            name = f'{self.NAMESPACE_PREFIX}{name}'
+            name = f'{self.DEFAULT_NAMESPACE_PREFIX}{name}'
         return self._site.pages(name)
 
     def _name_by_id(self, id_, is_uuid=False):
@@ -102,7 +103,7 @@ class Service:
         for page in self._site.categories[self.CATEGORY_NAME].members():
             page_title = page.page_title
             logger.debug(page_title)
-            new_title = f'{self.NAMESPACE_PREFIX}{page_title}'
+            new_title = f'{self.DEFAULT_NAMESPACE_PREFIX}{page_title}'
             new_page = self._site.pages(new_title)
             try:
                 if not new_page.exists:
@@ -144,7 +145,7 @@ class Service:
             if fetch_all_info:
                 services_data = {
                     category_member['title'].replace(
-                        self.NAMESPACE_PREFIX, ''):
+                        self.DEFAULT_NAMESPACE_PREFIX, ''):
                     self.fetch_by_name(category_member['title'])
                     for category_member in mw_response['query'][
                         'categorymembers']
@@ -152,7 +153,7 @@ class Service:
             else:
                 services_data = [
                     category_member['title'].replace(
-                        self.NAMESPACE_PREFIX, '')
+                        self.DEFAULT_NAMESPACE_PREFIX, '')
                     for category_member in mw_response['query'][
                         'categorymembers']
                 ]
