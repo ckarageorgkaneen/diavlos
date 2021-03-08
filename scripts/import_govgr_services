@@ -22,7 +22,7 @@ def fetch_add_requests():
 
 
 def get_request_auth():
-    with open(IN_FILES['site_config']) as f:
+    with open(IN_FILES['greek_site_config']) as f:
         site_config = yaml.safe_load(f)
     auth = (site_config['username'], site_config['password'])
     return auth
