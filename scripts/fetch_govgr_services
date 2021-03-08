@@ -32,7 +32,6 @@ GOVERNMENT_TOKEN = 'Δημόσιους φορείς'
 SOURCE_TOKEN = 'gov.gr'
 TYPE_TOKEN = 'Εξωστρεφής'
 TRIGGER_TOKEN = 'Αιτούμενη'
-CURRENT_STATUS_TOKEN = 'Υπό επεξεργασία'
 # Templates
 PROCESS_TEMPLATE = 'process'
 PROV_DIG_LOC_TEMPLATE = 'process_provision_digital_locations'
@@ -44,7 +43,6 @@ LIFE_EVENTS_FIELD = 'process_life_events'
 SOURCE_FIELD = 'process_source'
 TYPE_FIELD = 'process_type'
 TRIGGER_FIELD = 'process_interval'
-CURRENT_STATUS_FIELD = 'process_current_status'
 PROVISION_DIGITAL_LOCATION_TITLE_FIELD = \
     'process_provision_digital_location_title'
 PROVISION_DIGITAL_LOCATION_URL_FIELD = \
@@ -148,8 +146,6 @@ def add_request_dict(govgr_service_dict):
     process_template_instance[TYPE_FIELD] = TYPE_TOKEN
     # Add trigger
     process_template_instance[TRIGGER_FIELD] = TRIGGER_TOKEN
-    # Add current status
-    process_template_instance[CURRENT_STATUS_FIELD] = CURRENT_STATUS_TOKEN
     # Add process provision digital locations template fields
     service_actions = govgr_service_dict[SERVICE_ACTIONS_KEY]
     if service_actions:
