@@ -36,7 +36,7 @@ def getMaxDurationAsString(timer):
         return ''
     max_duration = timer[1]
     min_duration = timer[0]
-    out=max(int(max_duration),int(min_duration))
+    out = max(int(max_duration), int(min_duration))
     return template.format(out)
 
 
@@ -377,15 +377,15 @@ class BPMN:
         else:
             steptype = self._TASK_SUFFIX
         step = process_steps[stepcount]
-        if self._PROCESS_STEPS_STR==self._PROCESS_STEPS_DIGITAL_STR:
-          timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
-                 step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
-                 step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
+        if self._PROCESS_STEPS_STR == self._PROCESS_STEPS_DIGITAL_STR:
+            timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
+                     step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
+                     step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
         else:
-          timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
-                 step.get(self._PROCESS_STEP_DURATION_MAX),
-                 step.get(self._PROCESS_STEP_DURATION_TYPE))
-          
+            timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
+                     step.get(self._PROCESS_STEP_DURATION_MAX),
+                     step.get(self._PROCESS_STEP_DURATION_TYPE))
+
         # If no BranchNodes are found
         if len(options) == 0:
             task = etree.SubElement(process,
@@ -480,14 +480,14 @@ class BPMN:
             else:
                 steptype = self._TASK_SUFFIX
 
-            if self._PROCESS_STEPS_STR==self._PROCESS_STEPS_DIGITAL_STR:
-              timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
-                    step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
-                    step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
+            if self._PROCESS_STEPS_STR == self._PROCESS_STEPS_DIGITAL_STR:
+                timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
+                         step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
+                         step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
             else:
-              timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
-                    step.get(self._PROCESS_STEP_DURATION_MAX),
-                    step.get(self._PROCESS_STEP_DURATION_TYPE))
+                timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
+                         step.get(self._PROCESS_STEP_DURATION_MAX),
+                         step.get(self._PROCESS_STEP_DURATION_TYPE))
 
             # i)
             outgoing = etree.SubElement(
@@ -696,7 +696,6 @@ class BPMN:
                 rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
                 rounded_height = int(self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
                 maxChainHeight = rounded_height
-
             chainHeights.append(maxChainHeight)
         return chainHeights
 
@@ -1066,7 +1065,6 @@ class BPMN:
             width=str(self._WIDTH_TASK),
             height=str(rounded_height),
             nsmap=self._ns.NSMAP)
-        
 
     def _handlePlainNodeShapes(self, data, options, BPMNPlane, stepcount,
                                offset, planeHeight, xcurr, rounded_height):
@@ -1230,14 +1228,15 @@ class BPMN:
         for step_num, step in self._process_steps.items():
             stepcount += 1
             if step.get(self._PROCESS_STEP_TITLE) is not None:
-                if self._PROCESS_STEPS_STR==self._PROCESS_STEPS_DIGITAL_STR:
-                  timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
-                          step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
-                          step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
+                if self._PROCESS_STEPS_STR == self._PROCESS_STEPS_DIGITAL_STR:
+                    timer = (
+                        step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
+                        step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
+                        step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
                 else:
-                  timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
-                          step.get(self._PROCESS_STEP_DURATION_MAX),
-                          step.get(self._PROCESS_STEP_DURATION_TYPE))
+                    timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
+                             step.get(self._PROCESS_STEP_DURATION_MAX),
+                             step.get(self._PROCESS_STEP_DURATION_TYPE))
 
                 timers.append(timer)
                 stepname = step.get(self._PROCESS_STEP_TITLE)
@@ -1457,16 +1456,20 @@ class BPMN:
             targetNamespace=self._NAMESPACE[self._XML_TARGET_KEY],
             nsmap=self._ns.NSMAP)
         # Read steps in order
+        self._process_steps = {}
         stringsorted = data.get(self._FIELDS_KEY).get(self._PROCESS_STEPS_STR)
-        integerkeyed = {int(k): v for k, v in stringsorted.items()}
-        self._process_steps = OrderedDict(
-            sorted(integerkeyed.items(), key=lambda t: t[0]))
+        if stringsorted is not None:
+            integerkeyed = {int(k): v for k, v in stringsorted.items()}
+            self._process_steps = OrderedDict(
+                sorted(integerkeyed.items(), key=lambda t: t[0]))
         # Read evidences in order
+        self._process_evidences = {}
         ev_stringsorted = data.get(self._FIELDS_KEY).get(
             self._PROCESS_EVIDENCES_STR)
-        ev_integerkeyed = {int(k): v for k, v in ev_stringsorted.items()}
-        self._process_evidences = OrderedDict(
-            sorted(ev_integerkeyed.items(), key=lambda t: t[0]))
+        if ev_stringsorted is not None:
+            ev_integerkeyed = {int(k): v for k, v in ev_stringsorted.items()}
+            self._process_evidences = OrderedDict(
+                sorted(ev_integerkeyed.items(), key=lambda t: t[0]))
         if self._process_steps is None:
             xml_string = ''
         else:
