@@ -362,6 +362,10 @@ class Organization:
             if page is not None:
                 yield page
 
+    def _all_pages_simple(self):
+        for page in self._site.categories[self.CATALOGUE_CATEGORY_NAME]:
+            yield page
+
     def _create_pages(self, name, parent_category=None):
         if parent_category is None:
             parent_category = self.CATEGORY
@@ -453,6 +457,29 @@ class Organization:
                 page.edit(new_page_text)
                 logger.debug(f'{page.name} updated')
         logger.debug('Done.')
+
+    @_cli_command
+    def delete_old(self, fetch_from_api=False, dry_run=False):
+        """Delete old organizations (removed from apografi API)."""
+        latest_org_names = [
+            re.sub(' +', ' ', org['preferredLabel'].strip())
+            for org in self._all(fetch_from_api=fetch_from_api)
+        ]
+        for org_page in self._all_pages_simple():
+            org_page_title = org_page.page_title
+            if org_page_title not in latest_org_names:
+                if dry_run:
+                    print(f'SHOULD BE DELETED: {org_page_title}')
+                else:
+                    reason = 'Παλιός φορέας (δεν υπάρχει πια στην Απογραφή)'
+                    cat_str = ''
+                    org_page.delete(reason=reason)
+                    org_category_page = self._get_site_page(
+                        org_page_title, is_category=True)
+                    if org_category_page.exists:
+                        org_category_page.delete(reason=reason)
+                        cat_str = 'AND CATEGORY '
+                    print(f'PAGE {cat_str}WAS DELETED: {org_page_title}')
 
     def units(self, name, unit_types=None):
         units = []
