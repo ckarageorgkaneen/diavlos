@@ -1,3 +1,4 @@
+import inspect
 import logging
 import pickle
 import re
@@ -30,6 +31,8 @@ def _error(message):
 
 def _cli_command(func):
     func.is_cli_command = True
+    func.optional_arguments = [
+        arg for arg in inspect.getfullargspec(func).args if arg != 'self']
     return func
 
 
@@ -115,8 +118,9 @@ class Organization:
     DETAILS_PICKLE_FILE = INOUT_FILES['org_details']
     # Mediawiki
     CATEGORY_NAME = 'Φορείς'
+    CATALOGUE_CATEGORY_NAME = 'Κατάλογος Φορέων'
     CATEGORY = f'[[Category:{CATEGORY_NAME}]]'
-    CATALOGUE_CATEGORY = '[[Category:Κατάλογος Φορέων]]'
+    CATALOGUE_CATEGORY = f'[[Category:{CATALOGUE_CATEGORY_NAME}]]'
     NAMESPACE = 'Φορέας'
     NAMESPACE_NUMBER = 9000
     TEMPLATE_FIELD_NAME_SUFFIXES = [
@@ -371,9 +375,11 @@ class Organization:
         _add_text_to_page(page, self.CATALOGUE_CATEGORY)
 
     @_cli_command
-    def recreate_tree(self):
+    def recreate_tree(self, fetch_from_api=False):
+        """Create new organization category tree and pages."""
         logger.debug('Creating organization category tree and pages...')
-        for parent, children in self._hierarchy().items():
+        for parent, children in self._hierarchy(
+                fetch_from_api=fetch_from_api).items():
             self._create_pages(parent)
             parent_category = f'[[Category:{parent}]]'
             for child in children:
@@ -383,6 +389,7 @@ class Organization:
 
     @_cli_command
     def nuke_tree(self):
+        """Nuke organization category tree and pages."""
         logger.debug('Nuking organization category tree and pages...')
 
         def recurse_delete(page):
@@ -408,7 +415,8 @@ class Organization:
         logger.debug('Done.')
 
     @_cli_command
-    def update_pages(self):
+    def update_pages(self, fetch_from_api=False):
+        """Update organization pages from apografi API."""
         logger.debug('Updating organization pages...')
 
         def template_text(org_details):
@@ -432,7 +440,8 @@ class Organization:
                     template.parameters[
                         f'{self.TEMPLATE_PARAM_PREFIX}{key}'] = clean_value
             return str(template).replace(' |', '|')
-        for org, org_details in self._details().items():
+        for org, org_details in self._details(
+                fetch_from_api=fetch_from_api).items():
             page = self._get_site_page(f'{self.NAMESPACE}:{org}')
             if page is not None and page.exists:
                 page_text = page.text()
