@@ -281,10 +281,12 @@ class Organization:
         logger.debug('Fetched org hierarchy.')
         return hierarchy
 
-    def _fetch_details_from_api(self):
+    def fetch_details_from_api(self, org_names=None):
         logger.debug('Fetching org details from API...')
         details = {}
-        for org in self._all_page_names(without_namespace=True):
+        if org_names is None:
+            org_names = self._all_page_names(without_namespace=True)
+        for org in org_names:
             code = self._code_by_name(org)
             if code is None:
                 continue
@@ -328,7 +330,7 @@ class Organization:
 
     def _details(self, fetch_from_api=False):
         return _data(self.DETAILS_PICKLE_FILE,
-                     self._fetch_details_from_api,
+                     self.fetch_details_from_api,
                      fetch_from_api=fetch_from_api)
 
     def _all_page_names(self, without_namespace=False):
@@ -419,7 +421,8 @@ class Organization:
         logger.debug('Done.')
 
     @_cli_command
-    def update_pages(self, fetch_from_api=False):
+    def update_pages(self, fetch_from_api=False, details=None,
+                     force_create=False):
         """Update organization pages from apografi API."""
         logger.debug('Updating organization pages...')
 
@@ -444,10 +447,14 @@ class Organization:
                     template.parameters[
                         f'{self.TEMPLATE_PARAM_PREFIX}{key}'] = clean_value
             return str(template).replace(' |', '|')
-        for org, org_details in self._details(
-                fetch_from_api=fetch_from_api).items():
+        if details is None:
+            details = self._details(fetch_from_api=fetch_from_api)
+        for org, org_details in details.items():
             page = self._get_site_page(f'{self.NAMESPACE}:{org}')
-            if page is not None and page.exists:
+            page_condition = page is not None
+            if not force_create:
+                page_condition = page_condition and page.exists
+            if page_condition:
                 page_text = page.text()
                 page_text_leftovers = re.sub(
                     rf'{{{{{self.TEMPLATE_NAME}[^{{}}]+}}}}', '',
