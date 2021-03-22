@@ -123,13 +123,14 @@ class Organization:
     CATALOGUE_CATEGORY = f'[[Category:{CATALOGUE_CATEGORY_NAME}]]'
     NAMESPACE = 'Φορέας'
     NAMESPACE_NUMBER = 9000
+    TEMPLATE_CONTACT_POINT_TELEPHONE = 'contactPoint_telephone'
     TEMPLATE_FIELD_NAME_SUFFIXES = [
         'code',
         'preferredLabel',
         'alternativeLabels',
         'description',
         'url',
-        'contactPoint_telephone',
+        TEMPLATE_CONTACT_POINT_TELEPHONE,
         'contactPoint_email',
         'mainAddress_fullAddress',
         'mainAddress_postCode',
@@ -443,9 +444,18 @@ class Organization:
                 if value is not None:
                     if isinstance(value, list):
                         value = ','.join(value)
-                    clean_value = escape(str(value))
+                    value = escape(str(value))
+                    # Clean up telephone value
+                    if key == self.TEMPLATE_CONTACT_POINT_TELEPHONE:
+                        value = value.replace(' ', '').replace('+30', '')
+                        new_value = ''
+                        for c in value:
+                            if not c.isdigit():
+                                break
+                            new_value += c
+                        value = new_value
                     template.parameters[
-                        f'{self.TEMPLATE_PARAM_PREFIX}{key}'] = clean_value
+                        f'{self.TEMPLATE_PARAM_PREFIX}{key}'] = value
             return str(template).replace(' |', '|')
         if details is None:
             details = self._details(fetch_from_api=fetch_from_api)
