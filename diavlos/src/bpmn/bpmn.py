@@ -133,6 +133,8 @@ class BPMN:
     _PROCESS_STEP_DIGITAL_DURATION_TYPE = 'process_step_digital_duration_type'
     _TFORMALEXPRESSION = 'tFormalExpression'
 
+    _MAX_TEXT_LEN = 120
+
     # X
     _X_SHAPE = 100
     # Y
@@ -291,6 +293,8 @@ class BPMN:
             stepcount += 1
             evid_name = evidence[self._PROCESS_EVIDENCE_DESCR_KEY]
             if evid_name is not None:
+                if len(evid_name) > self._MAX_TEXT_LEN:
+                    evid_name = evid_name[:self._MAX_TEXT_LEN] + '...'
                 etree.SubElement(
                     process,
                     self._ns.semantic + self._DATA_OBJECT_SUFFIX,
