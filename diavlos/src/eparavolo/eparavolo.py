@@ -1,3 +1,4 @@
+"""A module for fetching eparavolo API information."""
 import datetime
 import functools
 import logging
@@ -80,6 +81,17 @@ class eParavolo:
             **_request_data(code)).getParavoloTypeInfoOutputRecord
 
     def fetch(self, code):
+        """Fetch eparavolo information by code.
+
+        Args:
+            code (int): The eparavolo public service API code, e.g. 7206.
+
+        Returns:
+            :obj:`enum 'eParavoloErrorCode'`: A eParavoloErrorCode.NOT_FOUND
+                enum, if a paravolo for the code is not found.
+            dict: eparavolo information containing description and price,
+                e.g. {"description": "Οδικά οχήματα", "price": 177}.
+        """
         type_info_output_record = self._type_info_output_record(code)
         if type_info_output_record is None:
             result = ErrorCode.NOT_FOUND
