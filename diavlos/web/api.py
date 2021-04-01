@@ -1,3 +1,4 @@
+"""The web API of diavlos."""
 import functools
 
 import jsonschema
