@@ -1,3 +1,4 @@
+"""A module for wrapping error objects."""
 from enum import Enum
 
 

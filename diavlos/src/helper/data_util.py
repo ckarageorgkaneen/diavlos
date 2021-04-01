@@ -1,3 +1,4 @@
+"""A module for simple file-related operations."""
 import os
 
 class DataUtil:
@@ -9,6 +10,7 @@ class DataUtil:
         return os.path.join(self._dirname, dir_)
 
     def files_with_extension(self, dir_, extension):
+        """Return files in a directory ending with a specific extension."""
         input_dir = self._input_dir(dir_)
         return {os.path.splitext(file)[0]: os.path.join(input_dir, file)
                 for file in os.listdir(input_dir) if file.endswith(
