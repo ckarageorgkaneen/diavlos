@@ -1,3 +1,6 @@
+"""A module for fetching, adding and updating organizations
+from the apografi API to the diavlos site.
+"""
 import inspect
 import logging
 import pickle
@@ -21,7 +24,7 @@ CATEGORY_PREFIX = '[[Category:'
 
 
 class OrganizationError(Exception):
-    pass
+    """OrganizationError exception"""
 
 
 def _error(message):
@@ -283,6 +286,15 @@ class Organization:
         return hierarchy
 
     def fetch_details_from_api(self, org_names=None):
+        """Fetch organization details from the API.
+
+        Args:
+            org_names (list): The names of the organizations.
+
+        Returns:
+            dict: A dictionary of the details for each organization,
+                as returned from the API.
+        """
         logger.debug('Fetching org details from API...')
         details = {}
         if org_names is None:
@@ -383,7 +395,12 @@ class Organization:
 
     @_cli_command
     def recreate_tree(self, fetch_from_api=False):
-        """Create new organization category tree and pages."""
+        """Create new organization category tree and pages.
+
+        Args:
+            fetch_from_api (bool): Whether to fetch new organization
+                data from the API or read the most recently saved data.
+        """
         logger.debug('Creating organization category tree and pages...')
         for parent, children in self._hierarchy(
                 fetch_from_api=fetch_from_api).items():
@@ -424,7 +441,17 @@ class Organization:
     @_cli_command
     def update_pages(self, fetch_from_api=False, details=None,
                      force_create=False):
-        """Update organization pages from apografi API."""
+        """Update organization pages from apografi API.
+
+        Args:
+            fetch_from_api (bool): Whether to fetch new organization
+                data from the API or read the most recently saved data.
+            details (dict): A dictionary of the details for each organization,
+                as returned from the API.
+            force_create (bool): Whether to create new organization pages that
+                do not exist on the site. By default, non-existent pages are
+                ignored.
+        """
         logger.debug('Updating organization pages...')
 
         def template_text(org_details):
@@ -477,7 +504,14 @@ class Organization:
 
     @_cli_command
     def delete_old(self, fetch_from_api=False, dry_run=False):
-        """Delete old organizations (removed from apografi API)."""
+        """Delete old organizations (removed from apografi API).
+
+        Args:
+            fetch_from_api (bool): Whether to fetch new organization
+                data from the API or read the most recently saved data.
+            dry_run (bool): Whether to perform a dry run or do the actual
+                deletion.
+        """
         latest_org_names = [
             re.sub(' +', ' ', org['preferredLabel'].strip())
             for org in self._all(fetch_from_api=fetch_from_api)
@@ -499,6 +533,27 @@ class Organization:
                     print(f'PAGE {cat_str}WAS DELETED: {org_page_title}')
 
     def units(self, name, unit_types=None):
+        """Return the units of an organization.
+
+        Args:
+            name (string): The name of the organization.
+            unit_types (list): A list of unit types, e.g. [4, 3, 41]
+
+        Returns:
+            list: The units of the organization. E.g.
+            [
+                {
+                  "code": "100117",
+                  "preferredLabel": "ΓΕΝΙΚΗ ΓΡΑΜΜΑΤΕΙΑ ΔΗΜΟΣΙΑΣ ΥΓΕΙΑΣ",
+                  "unitType": 41
+                },
+                {
+                  "code": "521532",
+                  "preferredLabel": "ΓΕΝΙΚΗ ΓΡΑΜΜΑΤΕΙΑ ΥΠΗΡΕΣΙΩΝ ΥΓΕΙΑΣ",
+                  "unitType": 41
+                }
+            ]
+        """
         units = []
 
         def add_sub_unit(unit):
