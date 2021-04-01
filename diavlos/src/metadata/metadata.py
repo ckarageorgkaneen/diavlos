@@ -1,3 +1,4 @@
+"""A MongoDB CRUD handler for service metadata."""
 import logging
 import functools
 
@@ -75,6 +76,16 @@ class Metadata:
         return self._db.delete_one(query)
 
     def create(self, uuid, type_, **metadata):
+        """Create a metadata document.
+
+        Args:
+            uuid (string): The uuid of a service.
+            type_ (string): The type of metadata.
+            metadata (dict): The actual metadata in key-value pairs.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
         read_result = self.read(uuid, type_)
         if read_result is None:
             document = _query(uuid, type_)
@@ -86,6 +97,14 @@ class Metadata:
         return result
 
     def read(self, uuid, type_):
+        """Read a metadata document.
+
+        Args:
+            uuid (string): The uuid of a service.
+            type_ (string): The type of metadata.
+
+        Returns: A single document, or None if no matching document is found.
+        """
         query = _query(uuid, type_)
         result = self._read(query)
         if result is not None:
@@ -93,11 +112,31 @@ class Metadata:
         return result
 
     def update(self, uuid, type_, unset=False, **metadata):
+        """Update a metadata document.
+
+        Args:
+            uuid (string): The uuid of a service.
+            type_ (string): The type of metadata.
+            unset (bool): Whether to unset the given metadata.
+            metadata (dict): The actual metadata in key-value pairs.
+
+        Returns:
+            bool: True if any documents were modified, False otherwise.
+        """
         query = _query(uuid, type_)
         result = self._update(query, dict(metadata=metadata), unset=unset)
         return result.modified_count > 0
 
     def delete(self, uuid, type_):
+        """Delete a metadata document.
+
+        Args:
+            uuid (string): The uuid of a service.
+            type_ (string): The type of metadata.
+
+        Returns:
+            bool: True if any documents were deleted, False otherwise.
+        """
         query = _query(uuid, type_)
         result = self._delete(query)
         return result.deleted_count > 0
