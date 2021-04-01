@@ -1,3 +1,4 @@
+"""A module for converting services to BPMN."""
 from collections import OrderedDict
 import xml.dom.minidom
 from lxml import etree
@@ -1446,6 +1447,15 @@ class BPMN:
         return BPMNPlane, planeHeight, bounds_width
 
     def xml(self, data):
+        """Return the bpmn XML of a service.
+
+        Args:
+            data (dict): The data of a service, as returned by
+                diavlos.src.service.Service._service_dict().
+
+        Returns:
+            str: The bpmn XML representation of a service.
+        """
         root = etree.Element(self._DEFINITIONS_KEY)
         root.append(etree.Element(self._PROCESS_STR))
         semanticEl = etree.Element(
