@@ -1,3 +1,4 @@
+"""A module for fetching, adding and updating services."""
 import logging
 import mwclient
 import re
@@ -99,6 +100,7 @@ class Service:
         return result
 
     def move_all_pages_in_category_to_namespace(self):
+        """TODO: Delete or move. This method was needed just for one script."""
         self.site_auto_login(auto=True)
         for page in self._site.categories[self.CATEGORY_NAME].members():
             page_title = page.page_title
@@ -113,12 +115,19 @@ class Service:
                 logger.debug(e)
 
     def site_auto_login(self):
+        """Do an automatic site login."""
         try:
             self._site.auto_login()
         except SiteError as e:
             _error(str(e))
 
     def site_login(self, username, password):
+        """Do a site login, by username and password.
+
+        Args:
+            username (string): Mediawiki username.
+            password (string): Mediawiki password.
+        """
         result = bool(username) and bool(password)
         if not result:
             _error('Username and password must not be empty.')
@@ -129,6 +138,19 @@ class Service:
 
     def fetch_all(self, limit_value=10, continue_value='',
                   fetch_all_info=False):
+        """Fetch all services.
+
+        Args:
+            limit_value (int): The max number of services to return (mediawiki
+                parameter).
+            continue_value (string): A pagination string for accessing the
+                next result page (mediawiki parameter).
+            fetch_all_info (bool): Whether to fetch all information for each
+                service or just their names.
+
+        Returns:
+            dict: The services to return.
+        """
         try:
             mw_response = self._site.get('query', format='json',
                                          list='categorymembers',
@@ -164,6 +186,20 @@ class Service:
         return result
 
     def fetch_by_name(self, name, fetch_bpmn_digital_steps=None):
+        """Fetch a service by name.
+
+        Args:
+            name (string): The name of the service.
+            fetch_bpmn_digital_steps (bool): Whether to fetch digital or
+                manual bpmn data. If None, do not return bpmn data.
+                Default: None.
+
+        Returns:
+            :obj:`enum 'ServiceErrorCode'`: A ServiceErrorCode.NOT_FOUND
+                enum, if the service is not found,
+            dict: service information if `fetch_bpmn_digital_steps` is None,
+            string: otherwise, the BPMN XML of the service.
+        """
         self.site_auto_login()
         page = self._page(name)
         if page.exists:
@@ -184,6 +220,21 @@ class Service:
 
     def fetch_by_id(self, id_, is_uuid=False,
                     fetch_bpmn_digital_steps=None):
+        """Fetch a service by id.
+
+        Args:
+            id_ (string or int): The id of the service.
+            is_uuid (bool): Whether `id_` is the service id or uuid.
+            fetch_bpmn_digital_steps (bool): Whether to fetch digital or
+                manual bpmn data. If None, do not return bpmn data.
+                Default: None.
+
+        Returns:
+            :obj:`enum 'ServiceErrorCode'`: A ServiceErrorCode.NOT_FOUND
+                enum, if the service is not found,
+            dict: the service information if fetch_bpmn_digital_steps is None,
+            string: otherwise, the BPMN XML of the service.
+        """
         service_name = self._name_by_id(id_, is_uuid=is_uuid)
         if service_name is None:
             result = ErrorCode.NOT_FOUND
@@ -194,6 +245,18 @@ class Service:
         return result
 
     def update_by_id(self, id_, fields, is_uuid=False):
+        """Update a service by id.
+
+        Args:
+            id_ (string or int): The id of the service.
+            fields (dict): The service fields to update.
+            is_uuid (bool): Whether `id_` is the service id or uuid.
+
+        Returns:
+            :obj:`enum 'ServiceErrorCode'`: A ServiceErrorCode enum for cases
+                such as if the service was not found, etc.
+            dict: the service information if fetch_bpmn_digital_steps is None,
+        """
         service_name = self._name_by_id(id_, is_uuid=is_uuid)
         if service_name is None:
             result = ErrorCode.NOT_FOUND
@@ -202,6 +265,17 @@ class Service:
         return result
 
     def update(self, name, fields):
+        """Update a service.
+
+        Args:
+            name (string): The name of the service.
+            fields (dict): The service fields to update.
+
+        Returns:
+            :obj:`enum 'ServiceErrorCode'`: A ServiceErrorCode enum for cases
+                such as if the service was not found, etc.
+            dict: the service information if fetch_bpmn_digital_steps is None,
+        """
         page = self._page(name)
         if not page.can('edit'):
             result = ErrorCode.UNAUTHORIZED_ACTION
@@ -272,6 +346,17 @@ class Service:
         return result
 
     def add(self, name, fields):
+        """Add a service.
+
+        Args:
+            name (string): The name of the service.
+            fields (dict): The service fields to add.
+
+        Returns:
+            :obj:`enum 'ServiceErrorCode'`: A ServiceErrorCode enum for cases
+                such as if the service already exists, etc.
+            dict: the service information if fetch_bpmn_digital_steps is None,
+        """
         page = self._page(name)
         if page.exists:
             result = ErrorCode.ALREADY_EXISTS
