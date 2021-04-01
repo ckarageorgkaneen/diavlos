@@ -1,3 +1,4 @@
+"""A client wrapper for the diavlos site."""
 import logging
 import yaml
 
@@ -46,6 +47,7 @@ class Site:
         return self.__config
 
     def pages(self, name):
+        """Get page by name."""
         try:
             return self._client.pages[name]
         except mwclient.errors.InvalidPageTitle as e:
@@ -53,9 +55,11 @@ class Site:
             _error(message)
 
     def auto_login(self):
+        """Login automatically."""
         self._client.login(self._config['username'], self._config['password'])
 
     def login(self, username, password, force=False):
+        """Login by username and password."""
         if self._logged_in and not force:
             return
         try:
