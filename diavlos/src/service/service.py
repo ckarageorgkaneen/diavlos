@@ -37,6 +37,12 @@ class Service:
     BEING_EDITTED_NAMESPACE = 'ΥΕ'
     TO_BE_APPROVED_NAMESPACE = 'ΠΕ'
     TO_BE_PUBLISHED_NAMESPACE = 'ΠΔ'
+    NAMESPACES = [
+        PUBLISHED_NAMESPACE,
+        BEING_EDITTED_NAMESPACE,
+        TO_BE_APPROVED_NAMESPACE,
+        TO_BE_PUBLISHED_NAMESPACE
+    ]
     DEFAULT_NAMESPACE = BEING_EDITTED_NAMESPACE
     DEFAULT_NAMESPACE_PREFIX = f'{DEFAULT_NAMESPACE}:'
     REGEX_HAS_NAMESPACE_PREFIX = re.compile(
@@ -76,10 +82,29 @@ class Service:
             fields_dict[tpl_name] = tpl_instances_data
         return dict_
 
-    def _page(self, name):
+    def _page_name(self, name):
         if not self._has_namespace_prefix(name):
-            name = f'{self.DEFAULT_NAMESPACE_PREFIX}{name}'
-        return self._site.pages(name)
+            return f'{self.DEFAULT_NAMESPACE_PREFIX}{name}'
+        return name
+
+    def _page(self, name):
+        name = self._page_name(name)
+        page = self._site.pages(name)
+        page_exists = page.exists
+        if page_exists:
+            return page, page_exists
+        split_name = name.split(':')
+        ns = split_name[0]
+        title = split_name[1]
+        other_namespaces = [
+            other_ns for other_ns in self.NAMESPACES if other_ns != ns]
+        for other_ns in other_namespaces:
+            other_ns_name = f'{other_ns}:{title}'
+            other_ns_page = self._site.pages(other_ns_name)
+            other_ns_page_exists = other_ns_page.exists
+            if other_ns_page_exists:
+                return other_ns_page, other_ns_page_exists
+        return page, page_exists
 
     def _name_by_id(self, id_, is_uuid=False):
         property_name = self.UUID_PROPERTY_NAME \
@@ -201,8 +226,8 @@ class Service:
             string: otherwise, the BPMN XML of the service.
         """
         self.site_auto_login()
-        page = self._page(name)
-        if page.exists:
+        page, page_exists = self._page(name)
+        if page_exists:
             page = page.resolve_redirect()
             service_dict = self._service_dict(
                 name, TemplateEditor(page.text()))
@@ -276,10 +301,10 @@ class Service:
                 such as if the service was not found, etc.
             dict: the service information if fetch_bpmn_digital_steps is None,
         """
-        page = self._page(name)
+        page, page_exists = self._page(name)
         if not page.can('edit'):
             result = ErrorCode.UNAUTHORIZED_ACTION
-        elif page.exists:
+        elif page_exists:
             te = TemplateEditor(page.text())
             fields_updated = False
             for tpl_name, tpl_instances in fields.items():
@@ -357,8 +382,8 @@ class Service:
                 such as if the service already exists, etc.
             dict: the service information if fetch_bpmn_digital_steps is None,
         """
-        page = self._page(name)
-        if page.exists:
+        page, page_exists = self._page(name)
+        if page_exists:
             result = ErrorCode.ALREADY_EXISTS
         elif not page.can('edit'):
             result = ErrorCode.UNAUTHORIZED_ACTION
