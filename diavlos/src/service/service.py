@@ -32,6 +32,7 @@ def _template_text(template_name, template_instance):
 class Service:
 
     NAME_KEY = 'name'
+    FULL_NAME_KEY = 'fullname'
     FIELDS_KEY = 'fields'
     PUBLISHED_NAMESPACE = 'ΔΔ'
     BEING_EDITTED_NAMESPACE = 'ΥΕ'
@@ -65,9 +66,10 @@ class Service:
     def _has_namespace_prefix(self, string):
         return bool(re.match(self.REGEX_HAS_NAMESPACE_PREFIX, string))
 
-    def _service_dict(self, name, template_editor):
+    def _service_dict(self, name, full_name, template_editor):
         dict_ = {
             self.NAME_KEY: name,
+            self.FULL_NAME_KEY: full_name,
             self.FIELDS_KEY: {}
         }
         fields_dict = dict_[self.FIELDS_KEY]
@@ -216,8 +218,10 @@ class Service:
         page, page_exists = self._page(name)
         if page_exists:
             page = page.resolve_redirect()
+            page_name = page.page_title
+            page_full_name = page.name
             service_dict = self._service_dict(
-                name, TemplateEditor(page.text()))
+                page_name, page_full_name, TemplateEditor(page.text()))
             if fetch_bpmn_digital_steps is None:
                 data = service_dict
             else:
@@ -349,8 +353,10 @@ class Service:
                 if wikitext[0] == '\n':
                     wikitext = wikitext[1:]
                 page.edit(wikitext)
+                page_name = page.page_title
+                page_full_name = page.name
                 result = self._service_dict(
-                    name, TemplateEditor(page.text()))
+                    page_name, page_full_name, TemplateEditor(page.text()))
             else:
                 result = ErrorCode.NO_FIELD_UPDATED
         else:
@@ -382,7 +388,9 @@ class Service:
             te = TemplateEditor(templates_text)
             if te.templates:
                 page.edit(te.wikitext())
-                result = self._service_dict(name, te)
+                page_name = page.page_title
+                page_full_name = page.name
+                result = self._service_dict(page_name, page_full_name, te)
             else:
                 result = ErrorCode.INVALID_TEMPLATE
         return result
