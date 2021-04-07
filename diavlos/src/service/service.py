@@ -88,6 +88,9 @@ class Service:
         return name
 
     def _page(self, name):
+        if self._has_namespace_prefix(name):
+            page = self._site.pages(name)
+            return page, page.exists
         name = self._page_name(name)
         page = self._site.pages(name)
         page_exists = page.exists
