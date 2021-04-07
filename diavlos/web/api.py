@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """The web API of diavlos."""
 import functools
 
@@ -290,3 +291,7 @@ def update_metadata(uuid, type, fields):
     else:
         result = 'Δεν ενημερώθηκαν μεταδεδομένα.'
     return result
+
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', debug=True)
