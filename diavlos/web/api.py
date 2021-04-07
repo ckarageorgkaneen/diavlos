@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """The web API of diavlos."""
 import functools
+import logging
 
 import jsonschema
 
-from flask import Flask
 from flask import jsonify
-from flask import request
-from flask_httpauth import HTTPBasicAuth
 
+import connexion
+from connexion.exceptions import Unauthorized
 
 from diavlos.data import IN_FILES
 from diavlos.src.eparavolo import eParavolo
@@ -18,12 +18,12 @@ from diavlos.src.helper.error import ErrorCode
 from diavlos.src.metadata import Metadata
 from diavlos.src.organization import Organization
 from diavlos.src.service import Service
-from diavlos.src.service import ServiceError
 from diavlos.src.service.error import ServiceErrorData
 from diavlos.src.site import Site
+from diavlos.src.site import SiteError
 
-app = Flask(__name__)
-auth = HTTPBasicAuth()
+logging.basicConfig(level=logging.INFO)
+
 default_site = greek_site = Site()
 english_site = Site(config_file=IN_FILES['english_site_config'])
 service = Service(site=default_site)
@@ -32,66 +32,36 @@ organization = Organization()
 metadata = Metadata()
 
 
-add_schema = {
+add_service_schema = {
     'type': 'object',
-    'properties': {
-        'name': {'type': 'string'},
-        'fields': {
-            'type': 'object',
-            'patternProperties': {
-                '^.*$': {
-                    'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'patternProperties': {
-                            '^.*$': {'type': 'string'}
-                        }
-                    }
-                }
-            },
-        }
-    },
-    'required': ['name', 'fields']
-}
-
-update_schema = {
-    'type': 'object',
-    'properties': {
-        'name': {
-            'type': 'string'
-        },
-        'fields': {
-            'patternProperties': {
-                '^.*$': {
-                    'additionalProperties': False,
-                    'type': 'object',
-                    'patternProperties': {
-                        '^[1-9][0-9]*$': {
-                            'patternProperties': {
-                                '^.*$': {'type': 'string'}
-                            }
-                        }
-                    }
+    'patternProperties': {
+        '^.*$': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'patternProperties': {
+                    '^.*$': {'type': 'string'}
                 }
             }
         }
     },
-    'required': ['fields'],
-    'oneOf': [
-        {'required': ['name']},
-        {'required': ['uuid']},
-        {'required': ['id']},
-    ],
 }
 
-metadata_schema = {
+update_service_schema = {
     'type': 'object',
-    'properties': {
-        'uuid': {'type': 'string'},
-        'type': {'type': 'string'},
-        'fields': {'type': 'object'}
-    },
-    'required': ['uuid', 'type', 'fields']
+    'patternProperties': {
+        '^.*$': {
+            'additionalProperties': False,
+            'type': 'object',
+            'patternProperties': {
+                '^[1-9][0-9]*$': {
+                    'patternProperties': {
+                        '^.*$': {'type': 'string'}
+                    }
+                }
+            }
+        }
+    }
 }
 
 VALIDATION_ERROR_MSG = 'Ακατάλληλο σχήμα json.'
@@ -102,11 +72,12 @@ def validate_schema(schema):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             try:
-                jsonschema.validate(instance=request.json, schema=schema)
+                jsonschema.validate(
+                    instance=connexion.request.json, schema=schema)
             except jsonschema.exceptions.ValidationError:
                 result = VALIDATION_ERROR_MSG
             else:
-                result = func(**request.json)
+                result = func(**kwargs)
             return result
         return wrapper
     return decorator
@@ -143,154 +114,128 @@ def make_response(func):
     return wrapper
 
 
-@auth.verify_password
-def service_site_login(username, password):
+def handle_english_param(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if 'english' in kwargs:
+            english = kwargs['english']
+            if english:
+                default_site = english_site
+        else:
+            default_site = greek_site
+        service.set_site(default_site)
+        return func(*args, **kwargs)
+    return wrapper
+
+
+def handle_bpmn_param(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if 'bpmn' in kwargs:
+            bpmn = kwargs['bpmn']
+            if bpmn == 'digital':
+                kwargs['bpmn'] = True
+            elif bpmn == 'manual':
+                kwargs['bpmn'] = False
+        return func(*args, **kwargs)
+    return wrapper
+
+
+def site_login(username, password, required_scopes=None):
     try:
-        service.site_login(username, password)
-    except ServiceError:
-        result = False
-    else:
-        result = True
-    return result
+        default_site.login(username, password)
+    except SiteError:
+        raise Unauthorized(description='Εσφαλμένα στοιχεία mediawiki')
+    return {}
 
 
-@app.route('/api/services')
 @make_response
-def fetch_all_services():
-    include_info = request.args.get('include_info')
-    page_continue = request.args.get('page_continue')
-    limit = request.args.get('limit')
-    kwargs = {}
-    if include_info:
-        kwargs['fetch_all_info'] = include_info.endswith('rue')
-    if page_continue:
-        kwargs['page_continue'] = page_continue
-    if limit:
-        kwargs['limit'] = limit
-    return service.fetch_all(**kwargs)
+def get_all_services(include_info=False, page_continue='', limit=10):
+    return service.fetch_all(include_info, page_continue, limit)
 
 
-@app.route('/api/service')
 @make_response
-def fetch_service():
-    global default_site
-    name = request.args.get('name')
-    uuid = request.args.get('uuid')
-    id_ = request.args.get('id')
-    bpmn = request.args.get('bpmn')
-    lang = request.args.get('lang')
-    if lang == 'en' and default_site is greek_site:
-        default_site = english_site
-    if lang != 'en' and default_site is english_site:
-        default_site = greek_site
-    service.set_site(default_site)
-    if bpmn == 'digital':
-        fetch_bpmn_digital_steps = True
-    elif bpmn == 'manual':
-        fetch_bpmn_digital_steps = False
-    else:
-        fetch_bpmn_digital_steps = None
-    service_id = uuid or id_
-    if name:
-        result = service.fetch_by_name(
-            name, fetch_bpmn_digital_steps=fetch_bpmn_digital_steps)
-    elif service_id:
-        result = service.fetch_by_id(
-            id_=service_id,
-            is_uuid=bool(uuid),
-            fetch_bpmn_digital_steps=fetch_bpmn_digital_steps)
-    else:
-        result = 'Υποχρεωτική παράμετρος: name ή uuid.'
-    return result
+@handle_english_param
+@handle_bpmn_param
+def get_service_by_name(name, bpmn=None, english=False):
+    return service.fetch_by_name(name, fetch_bpmn_digital_steps=bpmn)
 
 
-@app.route('/api/service/add', methods=['POST'])
-@auth.login_required
 @make_response
-@validate_schema(add_schema)
-def add_service(name, fields):
-    return service.add(name, fields)
+@handle_english_param
+@handle_bpmn_param
+def get_service_by_id(id, bpmn=None, english=False):
+    return service.fetch_by_id(id_=id, is_uuid=False,
+                               fetch_bpmn_digital_steps=bpmn)
 
 
-@app.route('/api/service/update', methods=['POST'])
-@auth.login_required
 @make_response
-@validate_schema(update_schema)
-def update_service(**kwargs):
-    name = kwargs.get('name')
-    uuid = kwargs.get('uuid')
-    id_ = kwargs.get('id')
-    fields = kwargs.get('fields')
-    if name:
-        result = service.update(name, fields)
-    else:
-        service_id = uuid or id_
-        result = service.update_by_id(service_id, fields, is_uuid=bool(uuid))
-    return result
+@handle_english_param
+@handle_bpmn_param
+def get_service_by_uuid(uuid, bpmn=None, english=False):
+    return service.fetch_by_id(id_=uuid, is_uuid=True,
+                               fetch_bpmn_digital_steps=bpmn)
 
 
-@app.route('/api/paravolo/<int:code>')
 @make_response
-def paravolo(code: int):
+@validate_schema(add_service_schema)
+def add_service(name):
+    return service.add(name, connexion.request.json)
+
+
+@make_response
+@validate_schema(update_service_schema)
+def update_service_by_name(name):
+    return service.update(name, fields=connexion.request.json)
+
+
+@make_response
+@validate_schema(update_service_schema)
+def update_service_by_id(id):
+    return service.update_by_id(id, fields=connexion.request.json,
+                                is_uuid=False)
+
+
+@make_response
+@validate_schema(update_service_schema)
+def update_service_by_uuid(uuid):
+    return service.update_by_id(uuid, fields=connexion.request.json,
+                                is_uuid=True)
+
+
+@make_response
+def get_organization_units(name, types):
+    return organization.units(name, unit_types=types)
+
+
+@make_response
+def get_paravolo(code):
     return eparavolo.fetch(code)
 
 
-@app.route('/api/organization/units')
 @make_response
-def organization_units():
-    name = request.args.get('name')
-    unit_types = request.args.get('unit_types')
-    if unit_types is not None:
-        try:
-            unit_types = [int(unit_type)
-                          for unit_type in unit_types.split(',')]
-        except ValueError:
-            unit_types = None
-    if name:
-        result = organization.units(name, unit_types=unit_types)
-    else:
-        result = 'Υποχρεωτική παράμετρος: name'
-    return result
+def get_metadata(uuid, type):
+    return metadata.read(uuid, type)
 
 
-@app.route('/api/metadata')
 @make_response
-def fetch_metadata():
-    uuid = request.args.get('uuid')
-    type_ = request.args.get('type')
-    if uuid and type_:
-        result = metadata.read(uuid, type_)
+def add_metadata(uuid, type):
+    if metadata.create(uuid, type, **connexion.request.json):
+        return metadata.read(uuid, type)
     else:
-        result = 'Υποχρεωτική παράμετροι: uuid, type'
-    if not result:
-        result = 'Δεν υπάρχει αυτή η καταχώρηση.'
-    return result
+        return f'Υπάρχει ήδη αυτή η καταχώρηση ({uuid}, {type}).'
 
 
-@app.route('/api/metadata/add', methods=['POST'])
-@auth.login_required
 @make_response
-@validate_schema(metadata_schema)
-def create_metadata(uuid, type, fields):
-    result = metadata.create(uuid, type, **fields)
-    if result:
-        result = metadata.read(uuid, type)
+def update_metadata(uuid, type):
+    if metadata.update(uuid, type, **connexion.request.json):
+        return metadata.read(uuid, type)
     else:
-        result = 'Υπάρχει ήδη αυτή η καταχώρηση (uuid, type).'
-    return result
+        return 'Δεν ενημερώθηκαν μεταδεδομένα.'
 
 
-@app.route('/api/metadata/update', methods=['POST'])
-@auth.login_required
-@make_response
-@validate_schema(metadata_schema)
-def update_metadata(uuid, type, fields):
-    result = metadata.update(uuid, type, **fields)
-    if result:
-        result = metadata.read(uuid, type)
-    else:
-        result = 'Δεν ενημερώθηκαν μεταδεδομένα.'
-    return result
+app = connexion.App(__name__)
+app.add_api('openapi.yaml')
 
 
 if __name__ == "__main__":
