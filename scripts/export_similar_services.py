@@ -9,7 +9,7 @@ CSV_HEADER_TITLE = 'Τίτλος'
 CSV_HEADER_SIMILAR_TITLES = 'Όμοιοι Τίτλοι'
 DEFAULT_SIMILARITY_PCT = 80
 site = Site()
-site.auto_login()
+site.login(auto=True)
 
 
 def write_similar_services(outfile, similarity):

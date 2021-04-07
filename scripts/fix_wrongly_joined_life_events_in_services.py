@@ -99,7 +99,7 @@ WRONG_LIFE_EVENTS_MAP = {
 }
 
 site = Site()
-site.auto_login()
+site.login(auto=True)
 
 for page in site.categories[Service.CATEGORY_NAME]:
     page_text = page.text()

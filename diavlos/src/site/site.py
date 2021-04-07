@@ -54,14 +54,13 @@ class Site:
             message = f'Page title: {name}. {str(e)}'
             _error(message)
 
-    def auto_login(self):
-        """Login automatically."""
-        self._client.login(self._config['username'], self._config['password'])
-
-    def login(self, username, password, force=False):
+    def login(self, username='', password='', auto=False, force=False):
         """Login by username and password."""
         if self._logged_in and not force:
             return
+        if auto:
+            username = self._config['username']
+            password = self._config['password']
         try:
             self._client.login(username, password)
         except (mwclient.errors.LoginError,

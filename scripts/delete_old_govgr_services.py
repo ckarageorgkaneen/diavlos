@@ -14,7 +14,7 @@ def main(delete=False):
     govgr_services_titles = [re.sub(' +', ' ', d['title'])
                              for d in govgr_services]
     site = Site()
-    site.auto_login()
+    site.login(auto=True)
     # for title in govgr_services_titles:
     #     print(title)
     if delete:

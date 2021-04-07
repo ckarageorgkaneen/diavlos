@@ -5,7 +5,7 @@ from diavlos.src.site import Site
 from diavlos.src.service import Service
 
 site = Site()
-site.auto_login()
+site.login(auto=True)
 
 REGEX_HTML_TAGS = re.compile('<.*?>')
 

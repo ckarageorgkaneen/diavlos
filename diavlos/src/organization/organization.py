@@ -176,7 +176,7 @@ class Organization:
     def _site(self):
         if not self._site_logged_in:
             try:
-                self.__site.auto_login()
+                self.__site.login(auto=True)
             except SiteError as e:
                 _error(str(e))
             else:

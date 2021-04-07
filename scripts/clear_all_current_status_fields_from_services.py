@@ -6,7 +6,7 @@ CURRENT_STATUS_FIELD = 'process_current_status='
 FILLED_CURRENT_STATUS_FIELD = f'{CURRENT_STATUS_FIELD}Υπό επεξεργασία'
 
 site = Site()
-site.auto_login()
+site.login(auto=True)
 
 for page in site.categories[Service.CATEGORY_NAME]:
     page.edit(page.text().replace(

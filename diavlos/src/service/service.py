@@ -126,7 +126,7 @@ class Service:
 
     def move_all_pages_in_category_to_namespace(self):
         """TODO: Delete or move. This method was needed just for one script."""
-        self.site_auto_login(auto=True)
+        self._site.login(auto=True)
         for page in self._site.categories[self.CATEGORY_NAME].members():
             page_title = page.page_title
             logger.debug(page_title)
@@ -142,22 +142,7 @@ class Service:
     def site_auto_login(self):
         """Do an automatic site login."""
         try:
-            self._site.auto_login()
-        except SiteError as e:
-            _error(str(e))
-
-    def site_login(self, username, password):
-        """Do a site login, by username and password.
-
-        Args:
-            username (string): Mediawiki username.
-            password (string): Mediawiki password.
-        """
-        result = bool(username) and bool(password)
-        if not result:
-            _error('Username and password must not be empty.')
-        try:
-            self._site.login(username=username, password=password)
+            self._site.login(auto=True)
         except SiteError as e:
             _error(str(e))
 
@@ -224,7 +209,7 @@ class Service:
             dict: service information if `fetch_bpmn_digital_steps` is None,
             string: otherwise, the BPMN XML of the service.
         """
-        self.site_auto_login()
+        self._site.login(auto=True)
         page, page_exists = self._page(name)
         if page_exists:
             page = page.resolve_redirect()

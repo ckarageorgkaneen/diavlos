@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from diavlos.src.site import Site
 site = Site()
-site.auto_login()
+site.login(auto=True)
 process_namespaces = [
     '9002',  # ΔΔ
     '9006',  # ΥΕ

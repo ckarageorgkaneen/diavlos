@@ -2,7 +2,7 @@
 from diavlos.src.site import Site
 
 site = Site()
-site.auto_login()
+site.login(auto=True)
 
 for page in site.categories['Κατάλογος Φορέων']:
     page_title = page.page_title

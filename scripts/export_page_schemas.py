@@ -115,7 +115,7 @@ def main(outfile):
     if not outfile.endswith(CSV_EXTENSION):
         outfile += CSV_EXTENSION
     site = Site()
-    site.auto_login()
+    site.login(auto=True)
     services_category = site.categories['Κατάλογος Διαδικασιών']
     services_category_text = services_category.text()
     services_page_schema_xml = re.sub(
