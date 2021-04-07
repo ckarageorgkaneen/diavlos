@@ -157,16 +157,16 @@ def service_site_login(username, password):
 @app.route('/api/services')
 @make_response
 def fetch_all_services():
-    all_info = request.args.get('all_info')
-    continue_value = request.args.get('continue')
-    limit_value = request.args.get('limit')
+    include_info = request.args.get('include_info')
+    page_continue = request.args.get('page_continue')
+    limit = request.args.get('limit')
     kwargs = {}
-    if all_info:
-        kwargs['fetch_all_info'] = all_info.endswith('rue')
-    if continue_value:
-        kwargs['continue_value'] = continue_value
-    if limit_value:
-        kwargs['limit_value'] = limit_value
+    if include_info:
+        kwargs['fetch_all_info'] = include_info.endswith('rue')
+    if page_continue:
+        kwargs['page_continue'] = page_continue
+    if limit:
+        kwargs['limit'] = limit
     return service.fetch_all(**kwargs)
 
 

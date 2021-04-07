@@ -161,16 +161,15 @@ class Service:
         except SiteError as e:
             _error(str(e))
 
-    def fetch_all(self, limit_value=10, continue_value='',
-                  fetch_all_info=False):
+    def fetch_all(self, include_info=False, page_continue='', limit=10):
         """Fetch all services.
 
         Args:
-            limit_value (int): The max number of services to return (mediawiki
+            limit (int): The max number of services to return (mediawiki
                 parameter).
-            continue_value (string): A pagination string for accessing the
+            page_continue (string): A pagination string for accessing the
                 next result page (mediawiki parameter).
-            fetch_all_info (bool): Whether to fetch all information for each
+            include_info (bool): Whether to fetch all information for each
                 service or just their names.
 
         Returns:
@@ -180,8 +179,8 @@ class Service:
             mw_response = self._site.get('query', format='json',
                                          list='categorymembers',
                                          cmtitle=self.CATEGORY,
-                                         cmcontinue=continue_value,
-                                         cmlimit=limit_value)
+                                         cmcontinue=page_continue,
+                                         cmlimit=limit)
         except mwclient.errors.APIError:
             result = ErrorCode.SITE_API_ERROR
         else:
@@ -189,7 +188,7 @@ class Service:
                 continue_response = mw_response['continue']['cmcontinue']
             else:
                 continue_response = None
-            if fetch_all_info:
+            if include_info:
                 services_data = {
                     category_member['title'].replace(
                         self.DEFAULT_NAMESPACE_PREFIX, ''):
