@@ -204,7 +204,7 @@ class Service:
                         'categorymembers']
                 ]
             result = {
-                'continue': continue_response,
+                'page_continue': continue_response,
                 'services': services_data
             }
         return result
