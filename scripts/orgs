@@ -8,19 +8,21 @@ for attr_name in dir(Organization):
     attr_obj = getattr(Organization, attr_name)
     if not attr_name.startswith('_') and callable(attr_obj) and hasattr(
             attr_obj, 'is_cli_command'):
-        COMMANDS[attr_name] = [attr_obj, attr_obj.optional_arguments]
+        COMMANDS[attr_name] = [
+            attr_obj, attr_obj.default_arguments]
 if __name__ == '__main__':
     organization = Organization()
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest=SUBPARSER_NAME)
     for name, command in COMMANDS.items():
         command_obj = command[0]
-        optional_arguments = command[1]
+        default_arguments = command[1]
         subparser = subparsers.add_parser(
             name.replace('_', '-'), help=command_obj.__doc__)
-        for optional_arg in optional_arguments:
-            subparser.add_argument(
-                f"--{optional_arg.replace('_', '-')}", action='store_true')
+        for kwarg, defval in default_arguments.items():
+            if isinstance(defval, bool):
+                subparser.add_argument(
+                    f"--{kwarg.replace('_', '-')}", action='store_true')
     if len(sys.argv) == 1:
         parser.print_help()
         parser.exit()

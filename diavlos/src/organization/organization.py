@@ -34,8 +34,11 @@ def _error(message):
 
 def _cli_command(func):
     func.is_cli_command = True
-    func.optional_arguments = [
-        arg for arg in inspect.getfullargspec(func).args if arg != 'self']
+    func.default_arguments = {
+        k: v.default
+        for k, v in inspect.signature(func).parameters.items()
+        if v.default is not inspect.Parameter.empty
+    }
     return func
 
 
