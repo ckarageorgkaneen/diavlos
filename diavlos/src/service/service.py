@@ -129,21 +129,6 @@ class Service:
                 result = None
         return result
 
-    def move_all_pages_in_category_to_namespace(self):
-        """TODO: Delete or move. This method was needed just for one script."""
-        self._site.login(auto=True)
-        for page in self._site.categories[self.CATEGORY_NAME].members():
-            page_title = page.page_title
-            logger.debug(page_title)
-            new_title = f'{self.DEFAULT_NAMESPACE_PREFIX}{page_title}'
-            new_page = self._site.pages(new_title)
-            try:
-                if not new_page.exists:
-                    page.move(new_title, no_redirect=True)
-                    logger.debug(f'Moved {page_title} to {new_title}')
-            except Exception as e:
-                logger.debug(e)
-
     def site_auto_login(self):
         """Do an automatic site login."""
         try:
