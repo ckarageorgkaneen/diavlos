@@ -148,11 +148,7 @@ paths:
             type: string
           example: 120 δόσεις εργοδοτών
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/serviceAdd'
+        $ref: '#/components/requestBodies/serviceAdd'
       responses:
         '200':
           description: Success
@@ -173,11 +169,7 @@ paths:
             type: string
           example: 120 δόσεις εργοδοτών
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/serviceUpdate'
+        $ref: '#/components/requestBodies/serviceUpdate'
       responses:
         '200':
           description: Success
@@ -198,11 +190,7 @@ paths:
             type: integer
           example: 652718
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/serviceUpdate'
+        $ref: '#/components/requestBodies/serviceUpdate'
       responses:
         '200':
           description: Success
@@ -223,11 +211,7 @@ paths:
             type: string
           example: 27a55a82-1167-46de-9f80-fda543cf8a12
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/serviceUpdate'
+        $ref: '#/components/requestBodies/serviceUpdate'
       responses:
         '200':
           description: Success
@@ -319,11 +303,7 @@ paths:
             type: string
           example: SDG
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/metadata'
+        $ref: '#/components/requestBodies/metadataAdd'
       responses:
         '200':
           description: Success
@@ -349,11 +329,7 @@ paths:
             type: string
           example: SDG
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/metadata'
+        $ref: '#/components/requestBodies/metadataUpdate'
       responses:
         '200':
           description: Success
@@ -363,24 +339,49 @@ components:
       type: http
       scheme: basic
       x-basicInfoFunc: api.site_login
+  requestBodies:
+    serviceAdd:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/serviceAdd'
+    serviceUpdate:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/serviceUpdate'
+    metadataAdd:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/metadata'
+    metadataUpdate:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/metadata'
   schemas:
     serviceAdd:
-      type: object
+      $ref: services_add_schema.yaml
       example:
-        Process:
+        process:
           - process_description: Περιγραφή δοκιμαστικής διαδικασίας.
-        Process useful links:
+        process_useful_links:
           - process_useful_link_title: Συχνές ερωτήσεις
             process_useful_link_url: 'https://www.efka.gov.gr/el/rythmise-opheilon-n-46112019-0'
           - process_useful_link_title: Επικοινωνία
             process_useful_link_url: 'https://www.eteaep.gov.gr/web/form#contact-form'
     serviceUpdate:
-      type: object
+      $ref: services_update_schema.yaml
       example:
-        Process:
+        process:
           1:
             process_description: Αλλαγμένη περιγραφή διαδικασίας
-        Process useful links:
+        process_useful_links:
           1:
             process_useful_link_title: Πολύ συχνές ερωτήσεις
             process_useful_link_url: 'https://www.efka.gov.gr/el/rythmise-opheilon-n-46112019-0'
@@ -390,10 +391,6 @@ components:
           3:
             process_useful_link_title: Νέος σύνδεσμος
             process_useful_link_url: 'https://www.google.gr/'
-        Νέο πρότυπο:
-          1:
-            σκύλος: Γαβ!
-            γάτα: Μιάου!
     metadata:
       type: object
       properties:
