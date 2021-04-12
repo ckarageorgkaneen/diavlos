@@ -31,7 +31,9 @@ JSON_SCHEMA_OBJECT_TYPE = {
 JSON_SCHEMA_UPDATE_PROPERTY_TYPE = {
     "type": "object",
     "description": ("Ένα λεξικό προτύπων, όπου τα κλειδιά είναι ο αριθμός του \
-προτύπου π.χ. '3' σημαίνει το 3ο πρότυπο"),
+προτύπου που θέλουμε να ενημερωθεί π.χ. το κλειδί '2' σημαίνει \
+το 2ο κατά σειρά πρότυπο της διαδικασίας. Αν το πρότυπο αυτό δεν \
+υπάρχει, τότε προστίθεται σαν καινούριο."),
     "additionalProperties": JSON_SCHEMA_OBJECT_TYPE
 }
 JSON_SCHEMA_UPDATE_OBJECT_TYPE = JSON_SCHEMA_OBJECT_TYPE
