@@ -3,11 +3,10 @@
 import functools
 import logging
 
-import jsonschema
-
 from flask import jsonify
 
 import connexion
+
 from connexion.exceptions import Unauthorized
 
 from diavlos.data import IN_FILES
@@ -30,57 +29,6 @@ service = Service(site=default_site)
 eparavolo = eParavolo()
 organization = Organization()
 metadata = Metadata()
-
-
-add_service_schema = {
-    'type': 'object',
-    'patternProperties': {
-        '^.*$': {
-            'type': 'array',
-            'items': {
-                'type': 'object',
-                'patternProperties': {
-                    '^.*$': {'type': 'string'}
-                }
-            }
-        }
-    },
-}
-
-update_service_schema = {
-    'type': 'object',
-    'patternProperties': {
-        '^.*$': {
-            'additionalProperties': False,
-            'type': 'object',
-            'patternProperties': {
-                '^[1-9][0-9]*$': {
-                    'patternProperties': {
-                        '^.*$': {'type': 'string'}
-                    }
-                }
-            }
-        }
-    }
-}
-
-VALIDATION_ERROR_MSG = 'Ακατάλληλο σχήμα json.'
-
-
-def validate_schema(schema):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                jsonschema.validate(
-                    instance=connexion.request.json, schema=schema)
-            except jsonschema.exceptions.ValidationError:
-                result = VALIDATION_ERROR_MSG
-            else:
-                result = func(**kwargs)
-            return result
-        return wrapper
-    return decorator
 
 
 def make_response(func):
@@ -178,26 +126,22 @@ def get_service_by_uuid(uuid, bpmn=None, english=False):
 
 
 @make_response
-@validate_schema(add_service_schema)
 def add_service(name):
     return service.add(name, connexion.request.json)
 
 
 @make_response
-@validate_schema(update_service_schema)
 def update_service_by_name(name):
     return service.update(name, fields=connexion.request.json)
 
 
 @make_response
-@validate_schema(update_service_schema)
 def update_service_by_id(id):
     return service.update_by_id(id, fields=connexion.request.json,
                                 is_uuid=False)
 
 
 @make_response
-@validate_schema(update_service_schema)
 def update_service_by_uuid(uuid):
     return service.update_by_id(uuid, fields=connexion.request.json,
                                 is_uuid=True)
@@ -235,7 +179,7 @@ def update_metadata(uuid, type):
 
 
 app = connexion.App(__name__)
-app.add_api('openapi.yaml')
+app.add_api('openapi-dereferenced.yaml')
 
 
 if __name__ == "__main__":
