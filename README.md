@@ -2,7 +2,7 @@
 
 <p align="center"> <img src="resources/logo.jpg?raw=true"/> </p>
 
-## Manager for DIAVLOS - Greece's National Service Registry
+## API for DIAVLOS - Greece's National Service Registry
 
 ### Install:
 ```bash
