@@ -6,9 +6,10 @@
 
 ### Install:
 ```bash
-pip install -e .
+./make
 ```
 ### Serve API locally
 ```bash
-./scripts/serve_api
+cd scripts
+./serve_api --generate-new-schemas
 ```
