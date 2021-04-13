@@ -37,7 +37,7 @@ def getMaxDurationAsString(timer):
         return ''
     max_duration = timer[1]
     min_duration = timer[0]
-    out = max(int(max_duration), int(min_duration))
+    out = max(float(max_duration), float(min_duration))
     return template.format(out)
 
 
