@@ -284,12 +284,14 @@ class Service:
             te = TemplateEditor(page.text())
             fields_updated = False
             for tpl_name, tpl_instances in fields.items():
-                template_names = te.templates.keys()
+                template_names = [tpl.lower() for tpl in te.templates.keys()]
                 if tpl_name in template_names:
                     page_tpl_instances = te.templates[tpl_name]
                     # Update template instances
                     for instance_num_str, tpl_instance in \
                             tpl_instances.items():
+                        if not instance_num_str.isdigit():
+                            break
                         instance_num = int(instance_num_str)
                         try:
                             page_tpl = page_tpl_instances[instance_num - 1]
@@ -305,7 +307,7 @@ class Service:
                                     for name, tpls in te.templates.items():
                                         for tpl in tpls:
                                             new_wiki_text += f'{str(tpl)}\n'
-                                        if name == tpl_name:
+                                        if name.lower() == tpl_name:
                                             new_wiki_text += \
                                                 f'{new_tpl_text}'
                                     if new_wiki_text:
