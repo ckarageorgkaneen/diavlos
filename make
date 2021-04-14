@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 pip install -e .
-npm install openapi-types@7.2.3           
-npm install @apidevtools/swagger-cli@4.0.4
+sudo npm install -g @apidevtools/swagger-cli
+sudo npm install --save-dev "openapi-types@>=7"
 
