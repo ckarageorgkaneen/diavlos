@@ -179,6 +179,7 @@ def update_metadata(uuid, type):
 
 
 app = connexion.App(__name__)
+app.app.config['JSON_AS_ASCII'] = False
 app.add_api('openapi-dereferenced.yaml')
 
 
