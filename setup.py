@@ -16,6 +16,7 @@ setup(
         'mwtemplates==0.4.0',
         'jsonschema==3.2.0',
         'aiohttp==3.7.3',
+        'xmltodict==0.12',
         'connexion[swagger-ui]==2.7.0',
     ]
 )
