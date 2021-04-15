@@ -65,6 +65,8 @@ def make_response(func):
 def handle_english_param(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        global default_site
+
         if 'english' in kwargs:
             english = kwargs['english']
             if english:
