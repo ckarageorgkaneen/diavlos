@@ -23,3 +23,8 @@ greek_site_config.yaml
 cd scripts
 ./serve_api --generate-new-schemas
 ```
+
+### Visit API UI docs
+```bash
+http://localhost:5000/v1/ui/
+```
