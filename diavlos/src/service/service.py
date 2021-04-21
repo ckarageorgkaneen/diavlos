@@ -164,13 +164,13 @@ class Service:
             else:
                 continue_response = None
             if include_info:
-                services_data = {
-                    category_member['title'].replace(
-                        self.DEFAULT_NAMESPACE_PREFIX, ''):
-                    self.fetch_by_name(category_member['title'])
+                services_data = [{
+                    "name":category_member['title'].replace(
+                        self.DEFAULT_NAMESPACE_PREFIX, ''),
+                    "info":self.fetch_by_name(category_member['title'])}
                     for category_member in mw_response['query'][
                         'categorymembers']
-                }
+                ]
             else:
                 services_data = [
                     category_member['title'].replace(
