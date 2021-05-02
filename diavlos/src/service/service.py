@@ -245,6 +245,7 @@ class Service:
             page_full_name = page.name
             current_revision = page.revisions(limit=1,dir='older').next()
             latest_update_date=datetime.utcfromtimestamp(mktime(current_revision['timestamp'])).isoformat()
+            page_id=page._info['pageid']
             service_dict = self._service_dict(
                 page_name, page_full_name, TemplateEditor(page.text()))
             if fetch_bpmn_digital_steps is None:
@@ -255,7 +256,7 @@ class Service:
                     service_dict).replace('\n', '').replace(
                     '\t', '').replace('\"', '\'')
 
-            data = {**data, **{"update":latest_update_date}}
+            data = {**data, **{"update":latest_update_date,"page_id":page_id}}
 
             result = data
         else:
