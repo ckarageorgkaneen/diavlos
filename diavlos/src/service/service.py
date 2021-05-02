@@ -33,7 +33,7 @@ def _template_text(template_name, template_instance):
 
 
 class Service:
-
+    TITLE_KEY= 'process_official_title'
     NAME_KEY = 'name'
     FULL_NAME_KEY = 'fullname'
     FIELDS_KEY = 'fields'
@@ -115,7 +115,7 @@ class Service:
         return page, page_exists
 
     def _id_by_fullname(self,name_):
-        property_name = self.TITLE
+        property_name = self.TITLE_KEY
         askargs_conditions = f'{property_name}::{name_[3:]}'
         try:
             site_response = self._site.get(
