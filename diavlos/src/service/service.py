@@ -136,7 +136,11 @@ class Service:
     def _name_by_id(self, id_, is_uuid=False):
         property_name = self.UUID_PROPERTY_NAME \
             if is_uuid else self.ID_PROPERTY_NAME
-        askargs_conditions = f'{property_name}::{id_}'
+
+        id_str = str(id_)
+        zero_filled_id = id_str.zfill(6)
+
+        askargs_conditions = f'{property_name}::{zero_filled_id}'
         try:
             site_response = self._site.get(
                 'askargs', format='json',
