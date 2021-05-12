@@ -127,7 +127,10 @@ class Service:
         else:
             site_response_results = site_response['query']['results']
             if len(site_response_results) >= 1:
-                result = site_response['query']['results'][name_]['printouts']['process_id']
+                try:
+                  result = site_response['query']['results'][name_]['printouts']['process_id']
+                except KeyError:
+                  result = None
             else:
                 result = None
 
@@ -260,8 +263,8 @@ class Service:
                     service_dict).replace('\n', '').replace(
                     '\t', '').replace('\"', '\'')
 
-            # data = {**data, **{"update":latest_update_date,"page_id":page_id}}
-            # data = {'data': data, "update":latest_update_date,"page_id":page_id}
+            data = {**data, **{"update":latest_update_date,"page_id":page_id}}
+
             result = data
         else:
             result = ErrorCode.NOT_FOUND
