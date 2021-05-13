@@ -126,14 +126,10 @@ class Service:
             result = ErrorCode.SITE_API_ERROR
         else:
             site_response_results = site_response['query']['results']
-            if len(site_response_results) >= 1:
-                try:
-                  result = site_response['query']['results'][name_]['printouts']['process_id']
-                except KeyError:
-                  result = None
+            if len(site_response_results) >= 1 and name_ in site_response_results:
+              result = site_response_results[name_]['printouts']['process_id']
             else:
-                result = None
-
+              result = None
         return result
 
     def _name_by_id(self, id_, is_uuid=False):
@@ -253,8 +249,9 @@ class Service:
             current_revision = page.revisions(limit=1,dir='older').next()
             latest_update_date=datetime.utcfromtimestamp(mktime(current_revision['timestamp'])).isoformat()
             page_id=page._info['pageid']
-            service_dict = self._service_dict(
-                page_name, page_full_name, TemplateEditor(page.text()))
+            service_dict = {**self._service_dict(
+                page_name, page_full_name, TemplateEditor(page.text())),
+                **{"update":latest_update_date,"page_id":page_id}}
             if fetch_bpmn_digital_steps is None:
                 data = service_dict
             else:
@@ -262,9 +259,6 @@ class Service:
                     digital_steps=fetch_bpmn_digital_steps).xml(
                     service_dict).replace('\n', '').replace(
                     '\t', '').replace('\"', '\'')
-
-            data = {**data, **{"update":latest_update_date,"page_id":page_id}}
-
             result = data
         else:
             result = ErrorCode.NOT_FOUND
