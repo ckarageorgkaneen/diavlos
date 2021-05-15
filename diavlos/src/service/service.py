@@ -253,7 +253,13 @@ class Service:
             current_revision = page.revisions(limit=1,dir='older').next()
             latest_update_date=datetime.utcfromtimestamp(mktime(current_revision['timestamp'])).isoformat()
             page_id=page._info['pageid']
+<<<<<<< HEAD
             service_dict = self._service_dict(page_name, page_full_name, latest_update_date, page_id, TemplateEditor(page.text()))
+=======
+            service_dict = {**self._service_dict(
+                page_name, page_full_name, TemplateEditor(page.text())),
+                **{"update":latest_update_date,"page_id":page_id}}
+>>>>>>> 59c06984d613bdaac479f7224bf9be1a2582de3b
             if fetch_bpmn_digital_steps is None:
                 data = service_dict
             else:
