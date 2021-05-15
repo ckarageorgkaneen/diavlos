@@ -37,6 +37,8 @@ class Service:
     NAME_KEY = 'name'
     FULL_NAME_KEY = 'fullname'
     FIELDS_KEY = 'fields'
+    UPDATE_KEY = 'update'
+    PAGE_ID_KEY = 'page_id'
     PUBLISHED_NAMESPACE = 'ΔΔ'
     BEING_EDITTED_NAMESPACE = 'ΥΕ'
     TO_BE_APPROVED_NAMESPACE = 'ΠΕ'
@@ -69,10 +71,12 @@ class Service:
     def _has_namespace_prefix(self, string):
         return bool(re.match(self.REGEX_HAS_NAMESPACE_PREFIX, string))
 
-    def _service_dict(self, name, full_name, template_editor):
+    def _service_dict(self, name, full_name, update_date, page_id, template_editor):
         dict_ = {
             self.NAME_KEY: name,
             self.FULL_NAME_KEY: full_name,
+            self.UPDATE_KEY: update_date,
+            self.PAGE_ID_KEY: page_id,
             self.FIELDS_KEY: {}
         }
         fields_dict = dict_[self.FIELDS_KEY]
@@ -250,8 +254,7 @@ class Service:
             current_revision = page.revisions(limit=1,dir='older').next()
             latest_update_date=datetime.utcfromtimestamp(mktime(current_revision['timestamp'])).isoformat()
             page_id=page._info['pageid']
-            service_dict = self._service_dict(
-                page_name, page_full_name, TemplateEditor(page.text()))
+            service_dict = self._service_dict(page_name, page_full_name, latest_update_date, page_id, TemplateEditor(page.text()))
             if fetch_bpmn_digital_steps is None:
                 data = service_dict
             else:
@@ -259,9 +262,6 @@ class Service:
                     digital_steps=fetch_bpmn_digital_steps).xml(
                     service_dict).replace('\n', '').replace(
                     '\t', '').replace('\"', '\'')
-
-            # data = {**data, **{"update":latest_update_date,"page_id":page_id}}
-            # data = {'data': data, "update":latest_update_date,"page_id":page_id}
             result = data
         else:
             result = ErrorCode.NOT_FOUND
@@ -390,8 +390,10 @@ class Service:
                 page.edit(wikitext)
                 page_name = page.page_title
                 page_full_name = page.name
-                result = self._service_dict(
-                    page_name, page_full_name, TemplateEditor(page.text()))
+                current_revision = page.revisions(limit=1,dir='older').next()
+                latest_update_date=datetime.utcfromtimestamp(mktime(current_revision['timestamp'])).isoformat()
+                page_id=page._info['pageid']
+                result = self._service_dict(page_name, page_full_name, latest_update_date, page_id, TemplateEditor(page.text()))
             else:
                 result = ErrorCode.NO_FIELD_UPDATED
         else:
@@ -425,7 +427,10 @@ class Service:
                 page.edit(te.wikitext())
                 page_name = page.page_title
                 page_full_name = page.name
-                result = self._service_dict(page_name, page_full_name, te)
+                current_revision = page.revisions(limit=1,dir='older').next()
+                latest_update_date=datetime.utcfromtimestamp(mktime(current_revision['timestamp'])).isoformat()
+                page_id=page._info['pageid']               
+                result = self._service_dict(page_name, page_full_name, latest_update_date, page_id, te)
             else:
                 result = ErrorCode.INVALID_TEMPLATE
         return result
