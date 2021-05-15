@@ -126,10 +126,10 @@ class Service:
             result = ErrorCode.SITE_API_ERROR
         else:
             site_response_results = site_response['query']['results']
-            if len(site_response_results) >= 1:
-                result = site_response['query']['results'][name_]['printouts']['process_id']
+            if len(site_response_results) >= 1 and name_ in site_response_results:
+              result = site_response_results[name_]['printouts']['process_id']
             else:
-                result = None
+              result = None
 
         return result
 
