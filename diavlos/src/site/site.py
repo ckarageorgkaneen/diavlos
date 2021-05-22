@@ -20,8 +20,8 @@ def _error(message):
 
 class Site:
     _DEFAULT_CONFIG_FILE = IN_FILES['greek_site_config']
-    _SCHEME = 'https'
-    _PATH = '/'
+    _DEFAULT_SCHEME = 'https'
+    _DEFAULT_PATH = '/'
 
     def __init__(self, config_file=_DEFAULT_CONFIG_FILE):
         self.__client = None
@@ -36,7 +36,10 @@ class Site:
     def _client(self):
         if self.__client is None:
             self.__client = mwclient.Site(
-                self._config['url'], scheme=self._SCHEME, path=self._PATH)
+                self._config['url'],
+                scheme=self._config.get('scheme', self._DEFAULT_SCHEME),
+                path=self._config.get('path', self._DEFAULT_PATH)
+            )
         return self.__client
 
     @property
