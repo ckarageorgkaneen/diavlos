@@ -107,6 +107,7 @@ def _dict_from_api_endpoint(endpoint):
         for datum in requests.get(endpoint).json()['data']
     }
 
+
 class Organization:
 
     # API

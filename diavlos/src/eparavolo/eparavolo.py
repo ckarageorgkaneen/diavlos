@@ -52,6 +52,7 @@ def _request_data(code):
         }
     }
 
+
 class eParavolo:
 
     _WSDL_URL = 'https://test.gsis.gr/esbpilot/eparavoloPublicService?wsdl'

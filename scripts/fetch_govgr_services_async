@@ -171,7 +171,8 @@ async def main():
     requests = await govgr_services_diavlos_add_requests(services)
     pprint.pprint(len(requests))
     pprint.pprint(type(requests))
-    pprint.pprint(f'Number of exceptions: {sum([isinstance(r, Exception) for r in requests])}')
+    pprint.pprint(
+        f'Number of exceptions: {sum([isinstance(r, Exception) for r in requests])}')
     pprint.pprint('First exception:')
     for r in requests:
         if isinstance(r, Exception):
