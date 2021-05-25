@@ -14,7 +14,13 @@ TO_BE_APPROVED_NAMESPACE = 'ΠΕ'
 TO_BE_PUBLISHED_NAMESPACE = 'ΠΔ'
 
 
-header_row = ['namespace', 'process_uuid', 'process_id', 'process_official_title', 'process_org_owner', 'process_source']
+header_row = [
+    'namespace',
+    'process_uuid',
+    'process_id',
+    'process_official_title',
+    'process_org_owner',
+    'process_source']
 
 
 ###

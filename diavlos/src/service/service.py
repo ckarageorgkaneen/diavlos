@@ -33,7 +33,7 @@ def _template_text(template_name, template_instance):
 
 
 class Service:
-    TITLE_KEY= 'process_official_title'
+    TITLE_KEY = 'process_official_title'
     NAME_KEY = 'name'
     FULL_NAME_KEY = 'fullname'
     FIELDS_KEY = 'fields'
@@ -114,7 +114,7 @@ class Service:
                 return other_ns_page, other_ns_page_exists
         return page, page_exists
 
-    def _id_by_fullname(self,name_):
+    def _id_by_fullname(self, name_):
         property_name = self.TITLE_KEY
         askargs_conditions = f'{property_name}::{name_[3:]}'
         try:
@@ -127,9 +127,9 @@ class Service:
         else:
             site_response_results = site_response['query']['results']
             if len(site_response_results) >= 1 and name_ in site_response_results:
-              result = site_response_results[name_]['printouts']['process_id']
+                result = site_response_results[name_]['printouts']['process_id']
             else:
-              result = None
+                result = None
 
         return result
 
@@ -191,7 +191,7 @@ class Service:
                 continue_response = None
             if include_info:
                 services_data = [{
-                    "name":category_member['title'].replace(
+                    "name": category_member['title'].replace(
                         self.DEFAULT_NAMESPACE_PREFIX, ''),
                     "info":self.fetch_by_name(category_member['title'])}
                     for category_member in mw_response['query'][
@@ -199,7 +199,7 @@ class Service:
                 ]
             else:
                 services_data = [{
-                    "name":category_member['title'].replace(
+                    "name": category_member['title'].replace(
                         self.DEFAULT_NAMESPACE_PREFIX, ''),
                     "id":self.get_id_by_fullname(category_member['title'])}
                     for category_member in mw_response['query'][
@@ -210,8 +210,8 @@ class Service:
                 'services': services_data
             }
         return result
-    
-    def get_id_by_fullname(self,name):
+
+    def get_id_by_fullname(self, name):
         """Get the process id by fullname.
         Args:
             name (string): The name of the service.
@@ -219,11 +219,11 @@ class Service:
             string: or None if the attribute is not yet set.
         """
         id = self._id_by_fullname(name)
-        if id != None :
-           if len(id) == 1:
-              id= id[0]
-           else :
-              id = None   
+        if id is not None:
+            if len(id) == 1:
+                id = id[0]
+            else:
+                id = None
         return id
 
     def fetch_by_name(self, name, fetch_bpmn_digital_steps=None):
@@ -247,9 +247,10 @@ class Service:
             page = page.resolve_redirect()
             page_name = page.page_title
             page_full_name = page.name
-            current_revision = page.revisions(limit=1,dir='older').next()
-            latest_update_date=datetime.utcfromtimestamp(mktime(current_revision['timestamp'])).isoformat()
-            page_id=page._info['pageid']
+            current_revision = page.revisions(limit=1, dir='older').next()
+            latest_update_date = datetime.utcfromtimestamp(
+                mktime(current_revision['timestamp'])).isoformat()
+            page_id = page._info['pageid']
             service_dict = self._service_dict(
                 page_name, page_full_name, TemplateEditor(page.text()))
             if fetch_bpmn_digital_steps is None:
