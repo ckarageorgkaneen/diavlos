@@ -71,7 +71,8 @@ def main(outfile, namespace=PUBLISHED_NAMESPACE):
             split_name = name.split(':')
             ns = split_name[0]
             if ns == namespace:  # print only selected Namespace
-                service_dict = _service_dict(TemplateEditor(page.text()), page_id, ns)
+                service_dict = _service_dict(
+                    TemplateEditor(page.text()), page_id, ns)
                 csv_output.writerow(service_dict)
 
         f.close()
