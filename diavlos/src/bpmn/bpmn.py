@@ -28,12 +28,17 @@ _MAX_DURATION_TEMPLATE = {
 """
 adds extra brackets to a json string
 """
+
+
 def bracketize(string):
     return f'{{{string}}}'
+
 
 """
 converts the total duration for all steps to string
 """
+
+
 def get_max_duration_as_string(timer):
     duration_type = timer[2]
     try:
@@ -47,7 +52,16 @@ def get_max_duration_as_string(timer):
 
 
 class BPMNNamespaces:
-    def __init__(self, semantic, bpmndi, di, dc, xsi, nsmap, di_namespace, xsi_namespace):
+    def __init__(
+            self,
+            semantic,
+            bpmndi,
+            di,
+            dc,
+            xsi,
+            nsmap,
+            di_namespace,
+            xsi_namespace):
         self.semantic = semantic
         self.bpmndi = bpmndi
         self.di = di
@@ -78,7 +92,7 @@ class BPMN:
     _FIELDS_KEY = 'fields'
     _WIDTH_KEY = 'width'
     _HEIGHT_KEY = 'height'
-    _STEP_NUM_ID='process_step_num_id'
+    _STEP_NUM_ID = 'process_step_num_id'
     _STEP_NUM_ID_DIGITAL = 'process_step_digital_num_id'
     # Prefixes
     _SEQUENCE_FLOW_PREFIX = 'SequenceFlow_'
@@ -256,7 +270,7 @@ class BPMN:
         self._process_evidences = None
 
     def group_options(self, opts):
-        exit_nodes=[]
+        exit_nodes = []
         chains = {}
         forward_chains = {}
         for opt in opts:
@@ -358,14 +372,12 @@ class BPMN:
             targetRef=allnodes[stepcount + 1],
             nsmap=self._ns.NSMAP)
 
-
-
     def _append_multiple_end_nodes(self, process, options):
-        if len(options)>1:
+        if len(options) > 1:
             # add the ExclusiveGateway
-            suffix=''
+            suffix = ''
             for opt in options:
-                to_node =opt.get(self._PROCESS_STEP_NUM_ID)
+                to_node = opt.get(self._PROCESS_STEP_NUM_ID)
                 opt.get(self._PROCESS_STEP_PREVIOUS_CHILD)
                 suffix = suffix + to_node + '.'
 
@@ -411,7 +423,7 @@ class BPMN:
                             targetRef=allnodes[stepcount],
                             nsmap=self._ns.NSMAP)
                     branched = False
-        if len(options)>0:
+        if len(options) > 0:
             # Add multiple endEvents
             self._append_multiple_end_nodes(process, options)
         else:
@@ -470,7 +482,7 @@ class BPMN:
             outgoing = etree.SubElement(
                 task, self._ns.semantic + self._OUTGOING_SUFFIX,
                 nsmap=self._ns.NSMAP)
-            to_node=str(stepcount)
+            to_node = str(stepcount)
             outgoing.text = self._SEQUENCE_FLOW_PREFIX + to_node
 
             if step[self._PROCESS_STEP_EXIT] == self._PROCESS_STEP_EXIT_YES:
@@ -478,9 +490,15 @@ class BPMN:
         # If there BranchNodes are found from the previous event
         else:
             _, _, forwardchains, _ = self.group_options(options)
-            nodes_left_to_merge= self._add_branch_nodes(options, process, forwardchains)
-            self._add_merge_nodes(process, stepcount, stepname, steptype, timer,
-                                  nodes_left_to_merge)
+            nodes_left_to_merge = self._add_branch_nodes(
+                options, process, forwardchains)
+            self._add_merge_nodes(
+                process,
+                stepcount,
+                stepname,
+                steptype,
+                timer,
+                nodes_left_to_merge)
             options = []
 
     def _append_collaboration(self, definition, process_name):
@@ -496,40 +514,44 @@ class BPMN:
             processRef=self._PR_PREFIX + str(hash(process_name)),
             nsmap=self._ns.NSMAP)
 
-
     def _add_branch_nodes(self, options, process, forwardchains):
         # Add an exclusiveGateway node, with an incoming edge
-        nodes_left_to_merge=[]
-        optionsdict={}
+        nodes_left_to_merge = []
+        optionsdict = {}
         if self._PROCESS_STEPS_STR == self._PROCESS_STEPS_DIGITAL_STR:
             step_num_id = self._STEP_NUM_ID_DIGITAL
         else:
             step_num_id = self._STEP_NUM_ID
         for opt in options:
-            optionsdict[opt[step_num_id]]=opt
+            optionsdict[opt[step_num_id]] = opt
 
-        splits=[]
+        splits = []
         for k in forwardchains.keys():
-            if len(forwardchains[k])>1:
+            if len(forwardchains[k]) > 1:
                 splits.append(k)
-                suffix=''
+                suffix = ''
                 for from_node, to_node in forwardchains[k]:
-                    suffix=suffix+to_node+'.'
+                    suffix = suffix + to_node + '.'
 
                 exclusive_gateway = etree.SubElement(
                     process, self._ns.semantic + self._EXCLUSIVE_GATEWAY_SUFFIX,
                     # id=self._EXCLUSIVE_GATEWAY_PREFIX + str(stepcount - len(options)),
-                    id=self._EXCLUSIVE_GATEWAY_PREFIX + str(k) + '_' + suffix[:-1],
+                    id=self._EXCLUSIVE_GATEWAY_PREFIX + \
+                    str(k) + '_' + suffix[:-1],
                     name=self._SELECTION_NAME, nsmap=self._ns.NSMAP)
                 incoming = etree.SubElement(
                     exclusive_gateway,
                     self._ns.semantic + self._INCOMING_SUFFIX,
                     nsmap=self._ns.NSMAP)
-                incoming.text = self._SEQUENCE_FLOW_PREFIX + str(k) #+'_EG'+str(k)
+                incoming.text = self._SEQUENCE_FLOW_PREFIX + \
+                    str(k)  # +'_EG'+str(k)
 
                 for from_node, to_node in forwardchains[k]:
-                    outgoing = etree.SubElement(exclusive_gateway, self._ns.semantic
-                                                + self._OUTGOING_SUFFIX, nsmap=self._ns.NSMAP)
+                    outgoing = etree.SubElement(
+                        exclusive_gateway,
+                        self._ns.semantic +
+                        self._OUTGOING_SUFFIX,
+                        nsmap=self._ns.NSMAP)
                     # ii)  e.g. SequenceFlow_3_1_1, SequenceFlow_3_2_1  etc.
                     outgoing.text = self._SEQUENCE_FLOW_PREFIX + from_node + '.' + to_node
 
@@ -538,11 +560,11 @@ class BPMN:
                 etree.SubElement(
                     process, self._ns.semantic + self._SEQUENCE_FLOW_SUFFIX,
                     id=self._SEQUENCE_FLOW_PREFIX + str(k),
-                    sourceRef=self._TASK_PREFIX+str(k),
+                    sourceRef=self._TASK_PREFIX + str(k),
                     targetRef=self._EXCLUSIVE_GATEWAY_PREFIX + str(k) + '_' + suffix[:-1],
                     nsmap=self._ns.NSMAP)
                 for from_node, to_node in forwardchains[k]:
-                    step=optionsdict[to_node]
+                    step = optionsdict[to_node]
                     stepimpl = step.get(self._PROCESS_STEP_IMPLEMENTATION)
                     if stepimpl == self._MANUAL_TASK:
                         steptype = self._MANUAL_TASK_SUFFIX
@@ -552,9 +574,11 @@ class BPMN:
                         steptype = self._TASK_SUFFIX
 
                     if self._PROCESS_STEPS_STR == self._PROCESS_STEPS_DIGITAL_STR:
-                        timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
-                                 step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
-                                 step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
+                        timer = (
+                            step.get(
+                                self._PROCESS_STEP_DIGITAL_DURATION_MIN), step.get(
+                                self._PROCESS_STEP_DIGITAL_DURATION_MAX), step.get(
+                                self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
                     else:
                         timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
                                  step.get(self._PROCESS_STEP_DURATION_MAX),
@@ -590,24 +614,27 @@ class BPMN:
                         self._ns.semantic + self._SEQUENCE_FLOW_SUFFIX,
                         id=self._SEQUENCE_FLOW_PREFIX + from_node + '.' + to_node,
                         sourceRef=self._EXCLUSIVE_GATEWAY_PREFIX + str(k) + '_' + suffix[:-1],
-                        targetRef = self._TASK_PREFIX + to_node, nsmap = self._ns.NSMAP)
+                        targetRef=self._TASK_PREFIX + to_node, nsmap=self._ns.NSMAP)
 
                     if to_node in forwardchains.keys():
-                        if len(forwardchains[to_node])>1:
+                        if len(forwardchains[to_node]) > 1:
                             strsuffix = ''
                         else:
-                            _,next_node=forwardchains[to_node][0]
-                            strsuffix = '.'+next_node
+                            _, next_node = forwardchains[to_node][0]
+                            strsuffix = '.' + next_node
                     else:
-                        strsuffix='_out'
+                        strsuffix = '_out'
                         nodes_left_to_merge.append(optionsdict[to_node])
 
                     if step[self._PROCESS_STEP_EXIT] == self._PROCESS_STEP_EXIT_YES:
-                        self._add_end_node(process,to_node)
+                        self._add_end_node(process, to_node)
 
-                    outgoing = etree.SubElement(sub_task, self._ns.semantic
-                                                + self._OUTGOING_SUFFIX, nsmap=self._ns.NSMAP)
-                    outgoing.text = self._SEQUENCE_FLOW_PREFIX + to_node+strsuffix
+                    outgoing = etree.SubElement(
+                        sub_task,
+                        self._ns.semantic +
+                        self._OUTGOING_SUFFIX,
+                        nsmap=self._ns.NSMAP)
+                    outgoing.text = self._SEQUENCE_FLOW_PREFIX + to_node + strsuffix
             else:
                 from_node, to_node = forwardchains[k][0]
                 step = optionsdict[to_node]
@@ -620,9 +647,11 @@ class BPMN:
                     steptype = self._TASK_SUFFIX
 
                 if self._PROCESS_STEPS_STR == self._PROCESS_STEPS_DIGITAL_STR:
-                    timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
-                             step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
-                             step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
+                    timer = (
+                        step.get(
+                            self._PROCESS_STEP_DIGITAL_DURATION_MIN), step.get(
+                            self._PROCESS_STEP_DIGITAL_DURATION_MAX), step.get(
+                            self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
                 else:
                     timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
                              step.get(self._PROCESS_STEP_DURATION_MAX),
@@ -654,10 +683,17 @@ class BPMN:
                 incoming.text = self._SEQUENCE_FLOW_PREFIX + from_node + '.' + to_node
                 etree.SubElement(
                     process,
-                    self._ns.semantic + self._SEQUENCE_FLOW_SUFFIX,
-                    id=self._SEQUENCE_FLOW_PREFIX + from_node + '.' + to_node,
-                    sourceRef=self._TASK_PREFIX + from_node,
-                    targetRef=self._TASK_PREFIX + to_node, nsmap=self._ns.NSMAP)
+                    self._ns.semantic +
+                    self._SEQUENCE_FLOW_SUFFIX,
+                    id=self._SEQUENCE_FLOW_PREFIX +
+                    from_node +
+                    '.' +
+                    to_node,
+                    sourceRef=self._TASK_PREFIX +
+                    from_node,
+                    targetRef=self._TASK_PREFIX +
+                    to_node,
+                    nsmap=self._ns.NSMAP)
 
                 if to_node in forwardchains.keys():
                     if len(forwardchains[to_node]) > 1:
@@ -668,12 +704,15 @@ class BPMN:
                     strsuffix = '_out'
 
                 if step[self._PROCESS_STEP_EXIT] == self._PROCESS_STEP_EXIT_YES:
-                    self._add_end_node(process,to_node)
+                    self._add_end_node(process, to_node)
                 else:
                     nodes_left_to_merge.append(optionsdict[to_node])
 
-                outgoing = etree.SubElement(sub_task, self._ns.semantic
-                                            + self._OUTGOING_SUFFIX, nsmap=self._ns.NSMAP)
+                outgoing = etree.SubElement(
+                    sub_task,
+                    self._ns.semantic +
+                    self._OUTGOING_SUFFIX,
+                    nsmap=self._ns.NSMAP)
                 outgoing.text = self._SEQUENCE_FLOW_PREFIX + to_node + strsuffix
 
         # Add:
@@ -683,7 +722,6 @@ class BPMN:
         # iv) their incoming and outgoing edges,
         # v) the respective SequenceFlows for these edges
         return nodes_left_to_merge
-
 
     def _add_end_node(self, process, to_node):
         task = etree.SubElement(process,
@@ -704,7 +742,7 @@ class BPMN:
             targetRef=self._END_EVENT_PREFIX + to_node + '_end', nsmap=self._ns.NSMAP)
 
     def _add_merge_nodes(self, process, stepcount,
-                       stepname, steptype, timer, nodes_left_to_merge):
+                         stepname, steptype, timer, nodes_left_to_merge):
         task = etree.SubElement(process, self._ns.semantic + steptype,
                                 id=self._TASK_PREFIX + str(stepcount),
                                 name=stepname, nsmap=self._ns.NSMAP)
@@ -732,13 +770,14 @@ class BPMN:
         else:
             step_num_id = self._STEP_NUM_ID
         for node in nodes_left_to_merge:
-            if node.get(self._PROCESS_STEP_EXIT)==self._PROCESS_STEP_EXIT_YES:
+            if node.get(
+                    self._PROCESS_STEP_EXIT) == self._PROCESS_STEP_EXIT_YES:
                 continue
-            to_node=node[step_num_id]
+            to_node = node[step_num_id]
             incoming = etree.SubElement(
                 task, self._ns.semantic + self._INCOMING_SUFFIX,
                 nsmap=self._ns.NSMAP)
-            incoming.text = self._SEQUENCE_FLOW_PREFIX  +to_node+ '_out'
+            incoming.text = self._SEQUENCE_FLOW_PREFIX + to_node + '_out'
             etree.SubElement(process,
                              self._ns.semantic + self._SEQUENCE_FLOW_SUFFIX,
                              id=self._SEQUENCE_FLOW_PREFIX + to_node + '_out',
@@ -756,30 +795,31 @@ class BPMN:
         return grid_heights
 
     def _get_chain_heights(self, options, forward_chains):
-        grid={}
-        gridheights={}
+        grid = {}
+        gridheights = {}
         options_dict = {}
         if self._PROCESS_STEPS_STR == self._PROCESS_STEPS_DIGITAL_STR:
             step_num_id = self._STEP_NUM_ID_DIGITAL
         else:
             step_num_id = self._STEP_NUM_ID
         for opt in options:
-            options_dict[opt[step_num_id]]=opt
-        column=-1
-        parents={}
+            options_dict[opt[step_num_id]] = opt
+        column = -1
+        parents = {}
         parent_columns = {}
         for node in forward_chains.keys():
             subnodes = forward_chains[node]
             if len(subnodes) == 1:
                 prev, curr = subnodes[0][0], subnodes[0][1]
                 if curr not in parents.keys():
-                    parents[curr]=prev
+                    parents[curr] = prev
                 step = options_dict[curr]
                 stepname = step.get(self._PROCESS_STEP_TITLE)
                 rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
                 rounded_height = int(self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
                 depthcurr = step.get('depth')
-                gridheights= self.update_grid_heights(depthcurr, rounded_height, gridheights)
+                gridheights = self.update_grid_heights(
+                    depthcurr, rounded_height, gridheights)
                 if parents[curr] in parent_columns.keys():
                     column = parent_columns[parents[curr]]
                 else:
@@ -787,19 +827,20 @@ class BPMN:
                 if depthcurr in grid.keys():
                     row = grid[depthcurr]
                     if curr not in parent_columns.keys():
-                        column+= 1
-                        parent_columns[curr]=column
+                        column += 1
+                        parent_columns[curr] = column
                     row[column] = self._TASK_PREFIX + str(curr)
                     grid[depthcurr] = row
                 else:
                     row = {}
                     if curr not in parent_columns.keys():
-                        parent_columns[curr]=column+1
+                        parent_columns[curr] = column + 1
                     row[column] = self._TASK_PREFIX + str(curr)
                     grid[depthcurr] = row
-                column+=1
+                column += 1
 
-                if step.get(self._PROCESS_STEP_EXIT)==self._PROCESS_STEP_EXIT_YES:
+                if step.get(
+                        self._PROCESS_STEP_EXIT) == self._PROCESS_STEP_EXIT_YES:
                     if depthcurr in grid.keys():
                         row = grid[depthcurr]
                         if curr not in parent_columns.keys():
@@ -815,18 +856,20 @@ class BPMN:
 
             else:
                 # we have a branch
-                suffix=''
+                suffix = ''
                 for branch in subnodes:
                     prev, curr = branch[0], branch[1]
                     if curr not in parents.keys():
                         parents[curr] = prev
                     step = options_dict[curr]
-                    suffix+=curr+'.'
+                    suffix += curr + '.'
                     stepname = step.get(self._PROCESS_STEP_TITLE)
                     rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
-                    rounded_height = int(self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
+                    rounded_height = int(
+                        self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
                     depth = step.get('depth')
-                    gridheights = self.update_grid_heights(depth, rounded_height, gridheights)
+                    gridheights = self.update_grid_heights(
+                        depth, rounded_height, gridheights)
 
                 for branch in subnodes:
                     prev, curr = branch[0], branch[1]
@@ -840,59 +883,75 @@ class BPMN:
                     if prev in options_dict.keys():
                         depthprev = options_dict[prev]['depth']
                     else:
-                        depthprev=0
+                        depthprev = 0
                     depthcurr = options_dict[curr]['depth']
-                    if depthprev==depthcurr:
+                    if depthprev == depthcurr:
                         if depthcurr in grid.keys():
-                            row=grid[depthcurr]
+                            row = grid[depthcurr]
                             if curr not in parent_columns.keys():
-                                column+=1+1
+                                column += 1 + 1
                                 parent_columns[curr] = column
-                            row[column-1]=self._EXCLUSIVE_GATEWAY_PREFIX+str(prev)+'_'+suffix[:-1]
-                            row[column] =self._TASK_PREFIX + str(curr)
+                            row[column - 1] = self._EXCLUSIVE_GATEWAY_PREFIX + \
+                                str(prev) + '_' + suffix[:-1]
+                            row[column] = self._TASK_PREFIX + str(curr)
                             grid[depthcurr] = row
                         else:
-                            row={}
+                            row = {}
                             if curr not in parent_columns.keys():
-                                column+=1+1
+                                column += 1 + 1
                                 parent_columns[curr] = column
-                            row[column-1]=self._EXCLUSIVE_GATEWAY_PREFIX+str(prev)+'_'+suffix[:-1]
-                            row[column] =self._TASK_PREFIX + str(curr)
-                            grid[depthcurr]=row
+                            row[column - 1] = self._EXCLUSIVE_GATEWAY_PREFIX + \
+                                str(prev) + '_' + suffix[:-1]
+                            row[column] = self._TASK_PREFIX + str(curr)
+                            grid[depthcurr] = row
                     else:
                         if depthcurr in grid.keys():
-                            row=grid[depthcurr]
+                            row = grid[depthcurr]
                             if curr not in parent_columns.keys():
-                                column += 1+1
+                                column += 1 + 1
                                 parent_columns[curr] = column
-                            row[column-1]= self._SEQUENCE_FLOW_PREFIX + prev + '.' + curr
+                            row[column - 1] = self._SEQUENCE_FLOW_PREFIX + \
+                                prev + '.' + curr
                             row[column] = self._TASK_PREFIX + str(curr)
                             grid[depthcurr] = row
                         else:
-                            row={}
+                            row = {}
                             if curr not in parent_columns.keys():
-                                column+=1+1
+                                column += 1 + 1
                                 parent_columns[curr] = column
-                            row[column-1]= self._SEQUENCE_FLOW_PREFIX + prev + '.' + curr
+                            row[column - 1] = self._SEQUENCE_FLOW_PREFIX + \
+                                prev + '.' + curr
                             row[column] = self._TASK_PREFIX + str(curr)
-                            grid[depthcurr]=row
+                            grid[depthcurr] = row
                     if curr not in forward_chains.keys():
-                        step=options_dict[curr]
+                        step = options_dict[curr]
                         if step[self._PROCESS_STEP_EXIT] == self._PROCESS_STEP_EXIT_YES:
-                            row=grid[depthcurr]
-                            row[column+1]=self._END_EVENT_PREFIX+str(curr)
+                            row = grid[depthcurr]
+                            row[column + 1] = self._END_EVENT_PREFIX + \
+                                str(curr)
 
-        reverse_grid={}
+        reverse_grid = {}
         for grid_key in grid.keys():
-            row=grid[grid_key]
+            row = grid[grid_key]
             for grid_col in row.keys():
-                col=row[grid_col]
-                reverse_grid[col]=(grid_key, grid_col)
+                col = row[grid_col]
+                reverse_grid[col] = (grid_key, grid_col)
 
         return options_dict, grid, reverse_grid, gridheights
 
-    def _plot_branch(self, branch, options, chains, chain_heights, stepcount, offset,
-                     forward_chains, options_dict, bpmn_plane, xend, ymove):
+    def _plot_branch(
+            self,
+            branch,
+            options,
+            chains,
+            chain_heights,
+            stepcount,
+            offset,
+            forward_chains,
+            options_dict,
+            bpmn_plane,
+            xend,
+            ymove):
         curr = branch[1]
         if curr not in forward_chains.keys():
             stepname = options_dict[curr].get(self._PROCESS_STEP_TITLE)
@@ -952,11 +1011,31 @@ class BPMN:
 
             del forward_chains[curr]
             for subn in subnodes:
-                self._plot_branch(subn, options, chains, chain_heights, stepcount, offset,
-                                  forward_chains, options_dict, bpmn_plane, xend, ymove)
+                self._plot_branch(
+                    subn,
+                    options,
+                    chains,
+                    chain_heights,
+                    stepcount,
+                    offset,
+                    forward_chains,
+                    options_dict,
+                    bpmn_plane,
+                    xend,
+                    ymove)
 
-    def _plot_forward_chains(self, options, chains, chain_heights, stepcount, offset,
-                             forward_chains, options_dict, bpmn_plane, xend, ymove):
+    def _plot_forward_chains(
+            self,
+            options,
+            chains,
+            chain_heights,
+            stepcount,
+            offset,
+            forward_chains,
+            options_dict,
+            bpmn_plane,
+            xend,
+            ymove):
         for node in list(forward_chains):
             if node not in forward_chains.keys():
                 continue
@@ -967,45 +1046,62 @@ class BPMN:
                 step.get('depth')
             else:
                 for branch in forward_chains[node]:
-                    self._plot_branch(branch, options, chains, chain_heights, stepcount, offset,
-                                      forward_chains, options_dict, bpmn_plane, xend, ymove)
+                    self._plot_branch(
+                        branch,
+                        options,
+                        chains,
+                        chain_heights,
+                        stepcount,
+                        offset,
+                        forward_chains,
+                        options_dict,
+                        bpmn_plane,
+                        xend,
+                        ymove)
 
-    def _add_branch_node_shapes(self, options, bpmn_plane, stepcount, xcurr, forwardchains):
+    def _add_branch_node_shapes(
+            self,
+            options,
+            bpmn_plane,
+            stepcount,
+            xcurr,
+            forwardchains):
         options_dict, grid, reverse_grid, grid_heights \
             = self._get_chain_heights(options, forwardchains)
-        node_ids=[]
-        nodes_left_to_merge=[]
-        splits=[]
+        node_ids = []
+        nodes_left_to_merge = []
+        splits = []
         ymove = 0
-        maxy=0
-        left=xcurr
-        top=ymove
-        parent_xs={}
+        maxy = 0
+        left = xcurr
+        top = ymove
+        parent_xs = {}
         xstart = xcurr + self._WIDTH_ARROW + self._WIDTH_RHOMBUS
-        rhombuses=0
-        end_nodes=0
+        rhombuses = 0
+        end_nodes = 0
         rowbaseline = 0
         for key in forwardchains.keys():
-            if len(forwardchains[key])>1:
+            if len(forwardchains[key]) > 1:
                 splits.append(key)
-                suffix=''
-                depths=[]
+                suffix = ''
+                depths = []
                 for from_node, to_node in forwardchains[key]:
                     if from_node not in parent_xs.keys():
-                        parent_xs[from_node]=(left,top)
+                        parent_xs[from_node] = (left, top)
                     else:
-                        xcurr,ymove = parent_xs[from_node]
+                        xcurr, ymove = parent_xs[from_node]
                     node_ids.append(int(to_node))
-                    suffix=suffix+to_node+'.'
+                    suffix = suffix + to_node + '.'
                     depths.append(options_dict[to_node].get('depth'))
 
-                row,col=reverse_grid[self._EXCLUSIVE_GATEWAY_PREFIX + str(key) + '_' + suffix[:-1]]
+                row, col = reverse_grid[self._EXCLUSIVE_GATEWAY_PREFIX +
+                                        str(key) + '_' + suffix[:-1]]
 
                 bpmn_shape = etree.SubElement(
                     bpmn_plane, self._ns.bpmndi + self._SHAPE_SUFFIX,
                     id=self._EXCLUSIVE_GATEWAY_PREFIX + str(key) + '_' + suffix[:-1]
-                       + self._DI_SUFFIX,
-                    bpmnElement =self._EXCLUSIVE_GATEWAY_PREFIX + str(key) + '_' + suffix[:-1],
+                    + self._DI_SUFFIX,
+                    bpmnElement=self._EXCLUSIVE_GATEWAY_PREFIX + str(key) + '_' + suffix[:-1],
                     isMarkerVisible=self._IS_MARKER_VISIBLE_TRUE, nsmap=self._ns.NSMAP)
                 etree.SubElement(
                     bpmn_shape, self._ns.dc + self._BOUNDS_SUFFIX,
@@ -1020,16 +1116,17 @@ class BPMN:
                 etree.SubElement(bpmn_label, self._ns.dc + self._BOUNDS_SUFFIX,
                                  x=str(xcurr + self._WIDTH_ARROW),
                                  # x=str(xcurr + self._OFFSET_BOUNDS +col*columnWidth),
-                                 y=str(self._Y_LABEL_VARIANT+ymove),
+                                 y=str(self._Y_LABEL_VARIANT + ymove),
                                  width=str(self._WIDTH_LABEL_VARIANT),
                                  height=str(self._HEIGHT_LABEL_VARIANT),
                                  nsmap=self._ns.NSMAP)
                 head = self._TASK_PREFIX
-                maxy=max(self._Y_SHAPE + row*self._rowHeight,
-                         self._Y_LABEL_VARIANT+row*self._rowHeight,maxy)
+                maxy = max(self._Y_SHAPE + row * self._rowHeight,
+                           self._Y_LABEL_VARIANT + row * self._rowHeight, maxy)
                 if stepcount == 2:
                     head = self._START_EVENT_PREFIX
-                # Draw an edge from the previous node to the ExclusiveGateway node
+                # Draw an edge from the previous node to the ExclusiveGateway
+                # node
                 bpmn_edge = etree.SubElement(
                     bpmn_plane, self._ns.bpmndi + self._EDGE_SUFFIX,
                     id=self._SEQUENCE_FLOW_PREFIX + str(key) + self._DI_SUFFIX,
@@ -1038,18 +1135,21 @@ class BPMN:
                     targetElement=self._EXCLUSIVE_GATEWAY_PREFIX + str(key) + '_' + suffix[:-1],
                     nsmap=self._ns.NSMAP)
                 self._create_waypoint(bpmn_edge, xcurr, self._Y_START + ymove)
-                self._create_waypoint(bpmn_edge, xcurr + self._WIDTH_ARROW, self._Y_START + ymove)
+                self._create_waypoint(
+                    bpmn_edge,
+                    xcurr + self._WIDTH_ARROW,
+                    self._Y_START + ymove)
                 bpmn_label = etree.SubElement(
                     bpmn_edge, self._ns.bpmndi + self._LABEL_SUFFIX,
                     nsmap=self._ns.NSMAP)
                 etree.SubElement(
                     bpmn_label, self._ns.dc + self._BOUNDS_SUFFIX,
-                    x=str(round((xcurr + self._WIDTH_ARROW) / 2+col*self._columnWidth)),
-                    y=str(self._Y_LABEL+row*self._rowHeight),
+                    x=str(round((xcurr + self._WIDTH_ARROW) / 2 + col * self._columnWidth)),
+                    y=str(self._Y_LABEL + row * self._rowHeight),
                     width=str(self._WIDTH_LABEL),
                     height=str(self._HEIGHT_LABEL),
                     nsmap=self._ns.NSMAP)
-                maxy=max(self._Y_LABEL+row*self._rowHeight,maxy)
+                maxy = max(self._Y_LABEL + row * self._rowHeight, maxy)
                 for from_node, to_node in forwardchains[key]:
                     node_ids.append(int(to_node))
                     step = options_dict[to_node]
@@ -1062,24 +1162,25 @@ class BPMN:
                     row, col = reverse_grid[self._TASK_PREFIX + to_node]
                     stepname = step.get(self._PROCESS_STEP_TITLE)
                     rows = int(len(stepname) / self._DIVISOR_TASK_ROWS)
-                    rounded_height = int(self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
+                    rounded_height = int(
+                        self._MULTIPLIER_TASK_TEXT_HEIGHT * rows)
 
                     bpmn_shape = etree.SubElement(
                         bpmn_plane, self._ns.bpmndi + self._SHAPE_SUFFIX,
                         id=self._TASK_PREFIX + to_node + self._DI_SUFFIX,
                         bpmnElement=self._TASK_PREFIX + to_node,
                         nsmap=self._ns.NSMAP)
-                    xnew = xstart + (self._WIDTH_ARROW + self._WIDTH_TASK) * (col-1) \
-                           - rhombuses*self._WIDTH_RHOMBUS
+                    xnew = xstart + (self._WIDTH_ARROW + self._WIDTH_TASK) * \
+                        (col - 1) - rhombuses * self._WIDTH_RHOMBUS
                     xcurr = xnew + (self._WIDTH_ARROW + self._WIDTH_TASK)
-                    curr_height=0
+                    curr_height = 0
                     for i in range(row):
-                        curr_height+= grid_heights[i]+self._HEIGHT_LABEL
-                    ymove = max(row*self._rowHeight, curr_height)
+                        curr_height += grid_heights[i] + self._HEIGHT_LABEL
+                    ymove = max(row * self._rowHeight, curr_height)
                     if to_node not in parent_xs.keys():
-                        parent_xs[to_node]=(xcurr,ymove)
+                        parent_xs[to_node] = (xcurr, ymove)
                     else:
-                        xcurr,ymove = parent_xs[to_node]
+                        xcurr, ymove = parent_xs[to_node]
 
                     etree.SubElement(
                         bpmn_shape, self._ns.dc + self._BOUNDS_SUFFIX,
@@ -1097,54 +1198,82 @@ class BPMN:
                         bpmnElement=self._TIMER_PREFIX + to_node,
                         nsmap=self._ns.NSMAP)
                     etree.SubElement(
-                        bpmn_shape, self._ns.dc + self._BOUNDS_SUFFIX,
-                        x=str(xcurr - 15),
-                        y=str(ymove + self._Y_LABEL_VARIANT + rounded_height + 10),
+                        bpmn_shape,
+                        self._ns.dc +
+                        self._BOUNDS_SUFFIX,
+                        x=str(
+                            xcurr -
+                            15),
+                        y=str(
+                            ymove +
+                            self._Y_LABEL_VARIANT +
+                            rounded_height +
+                            10),
                         width=str(32),
                         height=str(32),
                         nsmap=self._ns.NSMAP)
                     bpmn_label = etree.SubElement(
                         bpmn_shape, self._ns.bpmndi + self._LABEL_SUFFIX,
                         nsmap=self._ns.NSMAP)
-                    etree.SubElement(bpmn_label,
-                                     self._ns.dc + self._BOUNDS_SUFFIX,
-                                     x=str(xcurr - self._TASK_WIDTH + 30),
-                                     y=str(ymove + self._Y_LABEL_VARIANT + rounded_height + 32),
-                                     width=str(self._WIDTH_LABEL_VARIANT),
-                                     height=str(self._HEIGHT_LABEL_VARIANT),
-                                     nsmap=self._ns.NSMAP)
-                    maxy = max(ymove + self._Y_LABEL_VARIANT + rounded_height + 10,
-                               ymove + self._Y_LABEL_VARIANT + rounded_height + 32, maxy)
+                    etree.SubElement(
+                        bpmn_label,
+                        self._ns.dc +
+                        self._BOUNDS_SUFFIX,
+                        x=str(
+                            xcurr -
+                            self._TASK_WIDTH +
+                            30),
+                        y=str(
+                            ymove +
+                            self._Y_LABEL_VARIANT +
+                            rounded_height +
+                            32),
+                        width=str(
+                            self._WIDTH_LABEL_VARIANT),
+                        height=str(
+                            self._HEIGHT_LABEL_VARIANT),
+                        nsmap=self._ns.NSMAP)
+                    maxy = max(
+                        ymove +
+                        self._Y_LABEL_VARIANT +
+                        rounded_height +
+                        10,
+                        ymove +
+                        self._Y_LABEL_VARIANT +
+                        rounded_height +
+                        32,
+                        maxy)
 
-                    branch=False
+                    branch = False
                     if self._SEQUENCE_FLOW_PREFIX + from_node + '.' \
                             + to_node in reverse_grid.keys():
                         row, col = reverse_grid[self._SEQUENCE_FLOW_PREFIX
                                                 + from_node + '.' + to_node]
                         xnew = xstart + (self._WIDTH_ARROW + self._WIDTH_TASK) * col \
-                               - rhombuses*self._WIDTH_RHOMBUS
+                            - rhombuses * self._WIDTH_RHOMBUS
                         xcurr = xnew + (self._WIDTH_ARROW + self._WIDTH_TASK)
                         curr_height = 0
                         for i in range(row):
                             curr_height += grid_heights[i] + self._HEIGHT_LABEL
                         ymove = max(row * self._rowHeight, curr_height)
-                        branch=True
+                        branch = True
 
                     bpmn_edge = etree.SubElement(
                         bpmn_plane, self._ns.bpmndi + self._EDGE_SUFFIX,
                         id=self._SEQUENCE_FLOW_PREFIX + from_node + '.' + to_node + self._DI_SUFFIX,
                         bpmnElement=self._SEQUENCE_FLOW_PREFIX + from_node + '.' + to_node,
-                        sourceElement=self._EXCLUSIVE_GATEWAY_PREFIX + from_node+'_'+suffix[:-1],
+                        sourceElement=self._EXCLUSIVE_GATEWAY_PREFIX + from_node + '_' + suffix[:-1],
                         targetElement=self._TASK_PREFIX + to_node,
                         nsmap=self._ns.NSMAP)
 
-                    if rowbaseline==0:
-                        rowbaseline=self._Y_START + ymove
+                    if rowbaseline == 0:
+                        rowbaseline = self._Y_START + ymove
                     if branch:
                         self._create_waypoint(bpmn_edge, xnew, rowbaseline)
                         rowbaseline = self._Y_START + ymove
                     self._create_waypoint(bpmn_edge, xnew, rowbaseline)
-                    self._create_waypoint(bpmn_edge, xnew + self._WIDTH_ARROW, rowbaseline)
+                    self._create_waypoint(
+                        bpmn_edge, xnew + self._WIDTH_ARROW, rowbaseline)
                     bpmn_label = etree.SubElement(
                         bpmn_edge, self._ns.bpmndi + self._LABEL_SUFFIX,
                         nsmap=self._ns.NSMAP)
@@ -1157,12 +1286,12 @@ class BPMN:
                         nsmap=self._ns.NSMAP)
 
                     if step[self._PROCESS_STEP_EXIT] == self._PROCESS_STEP_EXIT_YES:
-                        rhombuses = self._add_end_node_shapes(rhombuses, end_nodes, to_node,
-                                                              bpmn_plane, maxy, parent_xs)
-                rhombuses+=1
+                        rhombuses = self._add_end_node_shapes(
+                            rhombuses, end_nodes, to_node, bpmn_plane, maxy, parent_xs)
+                rhombuses += 1
 
 #################################################
-            elif len(forwardchains[key])==1:
+            elif len(forwardchains[key]) == 1:
                 from_node, to_node = forwardchains[key][0]
                 node_ids.append(int(to_node))
 
@@ -1185,8 +1314,8 @@ class BPMN:
                     bpmnElement=self._TASK_PREFIX + to_node,
                     nsmap=self._ns.NSMAP)
 
-                xnew = xstart + (self._WIDTH_ARROW + self._WIDTH_TASK) * (col-1)  \
-                       - rhombuses * self._WIDTH_RHOMBUS + self._WIDTH_ARROW
+                xnew = xstart + (self._WIDTH_ARROW + self._WIDTH_TASK) * (col - 1)  \
+                    - rhombuses * self._WIDTH_RHOMBUS + self._WIDTH_ARROW
                 xcurr = xnew + (self._WIDTH_ARROW + self._WIDTH_TASK)
                 curr_height = 0
                 for i in range(row):
@@ -1199,8 +1328,8 @@ class BPMN:
                 etree.SubElement(
                     bpmn_shape, self._ns.dc + self._BOUNDS_SUFFIX,
                     x=str(xnew + self._WIDTH_ARROW),
-                    y=str(self._Y_SHAPE + ymove),width=str(self._WIDTH_TASK),
-                        height=str(rounded_height),nsmap=self._ns.NSMAP)
+                    y=str(self._Y_SHAPE + ymove), width=str(self._WIDTH_TASK),
+                    height=str(rounded_height), nsmap=self._ns.NSMAP)
 
                 # Add timer icon in branched nodes
                 bpmn_shape = etree.SubElement(
@@ -1218,25 +1347,58 @@ class BPMN:
                 bpmn_label = etree.SubElement(
                     bpmn_shape, self._ns.bpmndi + self._LABEL_SUFFIX,
                     nsmap=self._ns.NSMAP)
-                etree.SubElement(bpmn_label,
-                                 self._ns.dc + self._BOUNDS_SUFFIX,
-                                 x=str(xcurr - self._TASK_WIDTH + 30),
-                                 y=str(ymove + self._Y_LABEL_VARIANT + rounded_height + 32),
-                                 width=str(self._WIDTH_LABEL_VARIANT),
-                                 height=str(self._HEIGHT_LABEL_VARIANT),
-                                 nsmap=self._ns.NSMAP)
-                maxy = max(ymove + self._Y_LABEL_VARIANT + rounded_height + 10,
-                           ymove + self._Y_LABEL_VARIANT + rounded_height + 32, maxy)
+                etree.SubElement(
+                    bpmn_label,
+                    self._ns.dc +
+                    self._BOUNDS_SUFFIX,
+                    x=str(
+                        xcurr -
+                        self._TASK_WIDTH +
+                        30),
+                    y=str(
+                        ymove +
+                        self._Y_LABEL_VARIANT +
+                        rounded_height +
+                        32),
+                    width=str(
+                        self._WIDTH_LABEL_VARIANT),
+                    height=str(
+                        self._HEIGHT_LABEL_VARIANT),
+                    nsmap=self._ns.NSMAP)
+                maxy = max(
+                    ymove +
+                    self._Y_LABEL_VARIANT +
+                    rounded_height +
+                    10,
+                    ymove +
+                    self._Y_LABEL_VARIANT +
+                    rounded_height +
+                    32,
+                    maxy)
 
                 bpmn_edge = etree.SubElement(
-                    bpmn_plane, self._ns.bpmndi + self._EDGE_SUFFIX,
-                    id=self._SEQUENCE_FLOW_PREFIX + from_node + '.' + to_node + self._DI_SUFFIX,
-                    bpmnElement=self._SEQUENCE_FLOW_PREFIX + from_node + '.' + to_node,
-                    sourceElement=self._TASK_PREFIX + from_node,
-                    targetElement=self._TASK_PREFIX + to_node,
+                    bpmn_plane,
+                    self._ns.bpmndi +
+                    self._EDGE_SUFFIX,
+                    id=self._SEQUENCE_FLOW_PREFIX +
+                    from_node +
+                    '.' +
+                    to_node +
+                    self._DI_SUFFIX,
+                    bpmnElement=self._SEQUENCE_FLOW_PREFIX +
+                    from_node +
+                    '.' +
+                    to_node,
+                    sourceElement=self._TASK_PREFIX +
+                    from_node,
+                    targetElement=self._TASK_PREFIX +
+                    to_node,
                     nsmap=self._ns.NSMAP)
                 self._create_waypoint(bpmn_edge, xnew, self._Y_START + ymove)
-                self._create_waypoint(bpmn_edge, xnew + self._WIDTH_ARROW, self._Y_START + ymove)
+                self._create_waypoint(
+                    bpmn_edge,
+                    xnew + self._WIDTH_ARROW,
+                    self._Y_START + ymove)
                 bpmn_label = etree.SubElement(
                     bpmn_edge, self._ns.bpmndi + self._LABEL_SUFFIX,
                     nsmap=self._ns.NSMAP)
@@ -1249,11 +1411,19 @@ class BPMN:
                     nsmap=self._ns.NSMAP)
 
                 if step[self._PROCESS_STEP_EXIT] == self._PROCESS_STEP_EXIT_YES:
-                    rhombuses= self._add_end_node_shapes(rhombuses, end_nodes, to_node, bpmn_plane,
-                                                         maxy, parent_xs)
-        return maxy, nodes_left_to_merge, max(node_ids), rhombuses, grid, reverse_grid, grid_heights
+                    rhombuses = self._add_end_node_shapes(
+                        rhombuses, end_nodes, to_node, bpmn_plane, maxy, parent_xs)
+        return maxy, nodes_left_to_merge, max(
+            node_ids), rhombuses, grid, reverse_grid, grid_heights
 
-    def _add_end_node_shapes(self, rhombuses, end_nodes, to_node, bpmn_plane, maxy, parent_xs):
+    def _add_end_node_shapes(
+            self,
+            rhombuses,
+            end_nodes,
+            to_node,
+            bpmn_plane,
+            maxy,
+            parent_xs):
         xcurr, ymove = parent_xs[to_node]
 
         bpmn_shape = etree.SubElement(
@@ -1277,7 +1447,12 @@ class BPMN:
             width=str(self._WIDTH_LABEL),
             height=str(self._HEIGHT_LABEL),
             nsmap=self._ns.NSMAP)
-        maxy = max(self._Y_SHAPE_VARIANT + ymove, self._Y_SHAPE_VARIANT_2 + ymove, maxy)
+        maxy = max(
+            self._Y_SHAPE_VARIANT +
+            ymove,
+            self._Y_SHAPE_VARIANT_2 +
+            ymove,
+            maxy)
 
         bpmn_edge = etree.SubElement(
             bpmn_plane, self._ns.bpmndi + self._EDGE_SUFFIX,
@@ -1287,7 +1462,10 @@ class BPMN:
             targetElement=self._END_EVENT_PREFIX + to_node + '_end',
             nsmap=self._ns.NSMAP)
         self._create_waypoint(bpmn_edge, xcurr, self._Y_START + ymove)
-        self._create_waypoint(bpmn_edge, xcurr + self._WIDTH_ARROW, self._Y_START + ymove)
+        self._create_waypoint(
+            bpmn_edge,
+            xcurr + self._WIDTH_ARROW,
+            self._Y_START + ymove)
         bpmn_label = etree.SubElement(
             bpmn_edge, self._ns.bpmndi + self._LABEL_SUFFIX,
             nsmap=self._ns.NSMAP)
@@ -1302,22 +1480,30 @@ class BPMN:
         maxy = max(self._Y_LABEL + ymove, maxy)
         return rhombuses
 
-    def _add_merge_node_shapes(self, bpmn_plane, stepcount, xcurr, rounded_height,
-                            nodes_left_to_merge, max_node_id, grid, grid_heights):
+    def _add_merge_node_shapes(
+            self,
+            bpmn_plane,
+            stepcount,
+            xcurr,
+            rounded_height,
+            nodes_left_to_merge,
+            max_node_id,
+            grid,
+            grid_heights):
         head = self._TASK_PREFIX
-        next_node_ids=-1
-        xend=-1
-        offsets=self._get_grid_width(grid)
+        next_node_ids = -1
+        xend = -1
+        offsets = self._get_grid_width(grid)
         start = xcurr
-        offsets=[sum(row) for row in offsets]
-        if len(nodes_left_to_merge)>0:
+        offsets = [sum(row) for row in offsets]
+        if len(nodes_left_to_merge) > 0:
             for node in nodes_left_to_merge:
-                depth=node.get('depth')
-                nodeid=node.get(self._PROCESS_STEP_NUM_ID)
-                next_node_ids=str(max_node_id + 1)
+                depth = node.get('depth')
+                nodeid = node.get(self._PROCESS_STEP_NUM_ID)
+                next_node_ids = str(max_node_id + 1)
                 currstart = start + offsets[depth]
-                xend = start + max(offsets) + 2*self._WIDTH_ARROW
-                xmid = xend-self._ARROW_WIDTH
+                xend = start + max(offsets) + 2 * self._WIDTH_ARROW
+                xmid = xend - self._ARROW_WIDTH
 
                 bpmn_edge = etree.SubElement(
                     bpmn_plane, self._ns.bpmndi + self._EDGE_SUFFIX,
@@ -1326,9 +1512,11 @@ class BPMN:
                     sourceElement=self._TASK_PREFIX + nodeid,
                     targetElement=head + next_node_ids,
                     nsmap=self._ns.NSMAP)
-                bpmn_label = etree.SubElement(bpmn_edge,
-                                             self._ns.bpmndi + self._LABEL_SUFFIX,
-                                             nsmap=self._ns.NSMAP)
+                bpmn_label = etree.SubElement(
+                    bpmn_edge,
+                    self._ns.bpmndi +
+                    self._LABEL_SUFFIX,
+                    nsmap=self._ns.NSMAP)
                 if depth == 0:
                     self._create_waypoint(bpmn_edge, currstart, self._Y_START)
                     self._create_waypoint(bpmn_edge, xend, self._Y_START)
@@ -1344,21 +1532,31 @@ class BPMN:
                     for i in range(depth):
                         curr_height += grid_heights[i] + self._HEIGHT_LABEL
                     ymove = max(depth * self._rowHeight, curr_height)
-                    self._create_waypoint(bpmn_edge, currstart, self._Y_START + ymove)
-                    self._create_waypoint(bpmn_edge, xmid, self._Y_START + ymove)
+                    self._create_waypoint(
+                        bpmn_edge, currstart, self._Y_START + ymove)
+                    self._create_waypoint(
+                        bpmn_edge, xmid, self._Y_START + ymove)
                     self._create_waypoint(bpmn_edge, xmid, self._Y_START)
                     self._create_waypoint(bpmn_edge, xend, self._Y_START)
                     etree.SubElement(
-                        bpmn_label, self._ns.dc + self._BOUNDS_SUFFIX,
+                        bpmn_label,
+                        self._ns.dc +
+                        self._BOUNDS_SUFFIX,
                         x=str(xmid),
-                        y=str(self._Y_START + self._rowHeight * depth - self._OFFSET_Y_LABEL),
-                        width=str(self._WIDTH_LABEL),
-                        height=str(self._HEIGHT_LABEL),
+                        y=str(
+                            self._Y_START +
+                            self._rowHeight *
+                            depth -
+                            self._OFFSET_Y_LABEL),
+                        width=str(
+                            self._WIDTH_LABEL),
+                        height=str(
+                            self._HEIGHT_LABEL),
                         nsmap=self._ns.NSMAP)
-        elif len(nodes_left_to_merge)==0 and int(next_node_ids)<0:
-            return 0,False
+        elif len(nodes_left_to_merge) == 0 and int(next_node_ids) < 0:
+            return 0, False
 
-        if int(next_node_ids)>0:
+        if int(next_node_ids) > 0:
             bpmn_shape = etree.SubElement(
                 bpmn_plane, self._ns.bpmndi + self._SHAPE_SUFFIX,
                 id=head + str(next_node_ids) + self._DI_SUFFIX,
@@ -1380,7 +1578,7 @@ class BPMN:
                 nsmap=self._ns.NSMAP)
             etree.SubElement(
                 bpmn_shape, self._ns.dc + self._BOUNDS_SUFFIX,
-                x=str(xend +self._WIDTH_TASK- 15),
+                x=str(xend + self._WIDTH_TASK - 15),
                 y=str(self._Y_LABEL_VARIANT + rounded_height + 10),
                 width=str(32),
                 height=str(32),
@@ -1395,10 +1593,16 @@ class BPMN:
                              width=str(self._WIDTH_LABEL_VARIANT),
                              height=str(self._HEIGHT_LABEL_VARIANT),
                              nsmap=self._ns.NSMAP)
-        return xend+self._WIDTH_TASK, True
+        return xend + self._WIDTH_TASK, True
 
-    def _handle_plain_node_shapes(self, options, bpmn_plane, stepcount, plane_height, xcurr,
-                               rounded_height):
+    def _handle_plain_node_shapes(
+            self,
+            options,
+            bpmn_plane,
+            stepcount,
+            plane_height,
+            xcurr,
+            rounded_height):
         if len(options) == 0:
             bpmn_shape = etree.SubElement(
                 bpmn_plane, self._ns.bpmndi + self._SHAPE_SUFFIX,
@@ -1424,7 +1628,10 @@ class BPMN:
                 targetElement=self._TASK_PREFIX + str(stepcount),
                 nsmap=self._ns.NSMAP)
             self._create_waypoint(bpmn_edge, xcurr, self._Y_START)
-            self._create_waypoint(bpmn_edge, xcurr + self._WIDTH_ARROW, self._Y_START)
+            self._create_waypoint(
+                bpmn_edge,
+                xcurr + self._WIDTH_ARROW,
+                self._Y_START)
             bpmn_label = etree.SubElement(
                 bpmn_edge, self._ns.bpmndi + self._LABEL_SUFFIX,
                 nsmap=self._ns.NSMAP)
@@ -1462,9 +1669,10 @@ class BPMN:
                              height=str(self._HEIGHT_LABEL_VARIANT),
                              nsmap=self._ns.NSMAP)
 
-            has_end_node=True
+            has_end_node = True
         else:
-            _, max_chain_length, forward_chains, _ = self.group_options(options)
+            _, max_chain_length, forward_chains, _ = self.group_options(
+                options)
             branch_height, nodes_left_to_merge, max_node_id, _, grid, _, grid_heights \
                 = self._add_branch_node_shapes(options, bpmn_plane, stepcount, xcurr,
                                                forward_chains)
@@ -1481,7 +1689,7 @@ class BPMN:
         totalchainlength = 0
         options = []
         allnodes = []
-        has_end_node=False
+        has_end_node = False
         xcurr = self._OFFSET_X_APPEND_SHAPES_AND_EDGES
         bpmn_shape = etree.SubElement(
             bpmn_plane, self._ns.bpmndi + self._SHAPE_SUFFIX,
@@ -1511,9 +1719,17 @@ class BPMN:
             sourceElement=self._START_EVENT_0,
             targetElement=self._TASK_1_NAME,
             nsmap=self._ns.NSMAP)
-        self._create_waypoint(bpmn_edge, xcurr + self._WIDTH_START_EVENT, self._Y_START)
-        self._create_waypoint(bpmn_edge, xcurr + self._WIDTH_START_EVENT + self._WIDTH_ARROW,
-                              self._Y_START)
+        self._create_waypoint(
+            bpmn_edge,
+            xcurr +
+            self._WIDTH_START_EVENT,
+            self._Y_START)
+        self._create_waypoint(
+            bpmn_edge,
+            xcurr +
+            self._WIDTH_START_EVENT +
+            self._WIDTH_ARROW,
+            self._Y_START)
         bpmn_label = etree.SubElement(
             bpmn_edge, self._ns.bpmndi + self._LABEL_SUFFIX,
             nsmap=self._ns.NSMAP)
@@ -1529,7 +1745,8 @@ class BPMN:
         timers = []
         children_dict = {}
         for _, step in self._process_steps.items():
-            if step.get(self._PROCESS_STEP_CHILD) == self._PROCESS_STEP_CHILD_YES:
+            if step.get(
+                    self._PROCESS_STEP_CHILD) == self._PROCESS_STEP_CHILD_YES:
                 step.get(self._PROCESS_STEP_NUM_ID)
                 parent_id = int(step.get(self._PROCESS_STEP_PREVIOUS_CHILD))
                 if parent_id in children_dict:
@@ -1537,7 +1754,8 @@ class BPMN:
                 else:
                     children_dict[parent_id] = 0
                 sibling_count = children_dict[parent_id]
-                parent_depth = int(self._process_steps.get(parent_id).get('depth'))
+                parent_depth = int(
+                    self._process_steps.get(parent_id).get('depth'))
                 if parent_depth == 0:
                     step['depth'] = sibling_count
                 else:
@@ -1549,9 +1767,11 @@ class BPMN:
             stepcount += 1
             if step.get(self._PROCESS_STEP_TITLE) is not None:
                 if self._PROCESS_STEPS_STR == self._PROCESS_STEPS_DIGITAL_STR:
-                    timer = (step.get(self._PROCESS_STEP_DIGITAL_DURATION_MIN),
-                             step.get(self._PROCESS_STEP_DIGITAL_DURATION_MAX),
-                             step.get(self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
+                    timer = (
+                        step.get(
+                            self._PROCESS_STEP_DIGITAL_DURATION_MIN), step.get(
+                            self._PROCESS_STEP_DIGITAL_DURATION_MAX), step.get(
+                            self._PROCESS_STEP_DIGITAL_DURATION_TYPE))
                 else:
                     timer = (step.get(self._PROCESS_STEP_DURATION_MIN),
                              step.get(self._PROCESS_STEP_DURATION_MAX),
@@ -1617,17 +1837,24 @@ class BPMN:
                         options = []
                         totalchainlength += max_branch_length
                         allnodes.append(self._TASK_PREFIX + str(stepcount))
-        if has_end_node and len(options)==0:
+        if has_end_node and len(options) == 0:
             bpmn_shape = etree.SubElement(
                 bpmn_plane, self._ns.bpmndi + self._SHAPE_SUFFIX,
                 id=self._END_EVENT_PREFIX + str(stepcount + 1) + self._DI_SUFFIX,
                 bpmnElement=self._END_EVENT_PREFIX + str(stepcount + 1),
                 nsmap=self._ns.NSMAP)
             etree.SubElement(
-                bpmn_shape, self._ns.dc + self._BOUNDS_SUFFIX,
-                x=str(xcurr + self._WIDTH_ARROW),
-                y=str(self._Y_SHAPE_VARIANT), width=str(self._WIDTH_START_EVENT),
-                height=str(self._WIDTH_START_EVENT), nsmap=self._ns.NSMAP)
+                bpmn_shape,
+                self._ns.dc + self._BOUNDS_SUFFIX,
+                x=str(
+                    xcurr + self._WIDTH_ARROW),
+                y=str(
+                    self._Y_SHAPE_VARIANT),
+                width=str(
+                    self._WIDTH_START_EVENT),
+                height=str(
+                    self._WIDTH_START_EVENT),
+                nsmap=self._ns.NSMAP)
             bpmn_label = etree.SubElement(
                 bpmn_shape, self._ns.bpmndi + self._LABEL_SUFFIX,
                 nsmap=self._ns.NSMAP)
@@ -1646,7 +1873,10 @@ class BPMN:
                 targetElement=self._END_EVENT_PREFIX + str(stepcount + 1),
                 nsmap=self._ns.NSMAP)
             self._create_waypoint(bpmn_edge, xcurr, self._Y_START)
-            self._create_waypoint(bpmn_edge, xcurr + self._WIDTH_ARROW, self._Y_START)
+            self._create_waypoint(
+                bpmn_edge,
+                xcurr + self._WIDTH_ARROW,
+                self._Y_START)
             bpmn_label = etree.SubElement(
                 bpmn_edge, self._ns.bpmndi + self._LABEL_SUFFIX,
                 nsmap=self._ns.NSMAP)
@@ -1660,31 +1890,29 @@ class BPMN:
             xcurr += self._WIDTH_LABEL
         elif len(options) > 0:
             _, _, forward_chains, _ = self.group_options(options)
-            branch_height, _, _, _, grid, _, _ = self._add_branch_node_shapes(options, bpmn_plane,
-                                                                             stepcount, xcurr,
-                                                                             forward_chains)
+            branch_height, _, _, _, grid, _, _ = self._add_branch_node_shapes(
+                options, bpmn_plane, stepcount, xcurr, forward_chains)
             offsets_plain = self._get_grid_width(grid)
             offsets_flat = [sum(row) for row in offsets_plain]
-            xcurr +=max(offsets_flat)
+            xcurr += max(offsets_flat)
         # else:
         #     print('Check This Too!!')
 
-        plane_height=max(plane_height, branch_height, max(rounded_heights))
-
+        plane_height = max(plane_height, branch_height, max(rounded_heights))
 
         return plane_height + self._OFFSET_X_APPEND_SHAPES_AND_EDGES, xcurr
 
     def _get_grid_width(self, grid):
-        offsets=[]
+        offsets = []
         for k in grid.keys():
             row = grid[k]
-            minkey=min(row.keys())
-            if minkey==0:
-                offset=[]
+            minkey = min(row.keys())
+            if minkey == 0:
+                offset = []
                 for col_keys in row.keys():
                     col = row[col_keys]
                     if col.startswith('ExclusiveGateway'):
-                        offset.append(self._WIDTH_RHOMBUS+self._WIDTH_ARROW)
+                        offset.append(self._WIDTH_RHOMBUS + self._WIDTH_ARROW)
                     elif col.startswith('Task'):
                         offset.append(self._WIDTH_TASK + self._WIDTH_ARROW)
                     elif col.startswith('SequenceFlow'):
@@ -1693,13 +1921,13 @@ class BPMN:
                         offset.append(self._WIDTH_RHOMBUS)
                 offsets.append(offset)
             else:
-                offsets_lists=[offsets[i][:minkey] for i in range(k)]
-                max_offset=max(sum(l) for l in offsets_lists)
-                offset=[max_offset]
+                offsets_lists = [offsets[i][:minkey] for i in range(k)]
+                max_offset = max(sum(l) for l in offsets_lists)
+                offset = [max_offset]
                 for col_keys in row.keys():
                     col = row[col_keys]
                     if col.startswith('ExclusiveGateway'):
-                        offset.append(self._WIDTH_RHOMBUS+self._WIDTH_ARROW)
+                        offset.append(self._WIDTH_RHOMBUS + self._WIDTH_ARROW)
                     elif col.startswith('Task'):
                         offset.append(self._WIDTH_TASK + self._WIDTH_ARROW)
                     elif col.startswith('SequenceFlow'):
@@ -1709,7 +1937,11 @@ class BPMN:
                 offsets.append(offset)
         return offsets
 
-    def _append_data_object_shapes(self, bpmn_plane, plane_height, bounds_width):
+    def _append_data_object_shapes(
+            self,
+            bpmn_plane,
+            plane_height,
+            bounds_width):
         # Now add the shapes for the Evidences
         stepcount = 0
         maxtextheight = 0
@@ -1756,10 +1988,10 @@ class BPMN:
                     nsmap=self._ns.NSMAP)
                 xcurr += self._OFFSET_DOC_TAB
             # row is full no so continue to next row
-            if max_evidences_per_row>0 and stepcount % max_evidences_per_row == 0:
+            if max_evidences_per_row > 0 and stepcount % max_evidences_per_row == 0:
                 evidence_rows_start = evidence_rows_starts[-1] + \
-                                      maxtextheight + 2 * self._HEIGHT_DOC_ICON + \
-                                      self._OFFSET_X_DOC
+                    maxtextheight + 2 * self._HEIGHT_DOC_ICON + \
+                    self._OFFSET_X_DOC
                 evidence_rows_starts.append(evidence_rows_start)
                 maxtextheight = 0
                 xcurr = self._OFFSET_X_DOC
@@ -1772,12 +2004,12 @@ class BPMN:
             id=self._TRISOTECH_ID_6,
             nsmap=self._ns.NSMAP)
         bpmn_diagram.attrib[QName(self._ns.di_NAMESPACE, self._NAME_KEY)
-        ] = self._NAME_ATTR_PREFIX + process_name
+                            ] = self._NAME_ATTR_PREFIX + process_name
         bpmn_diagram.attrib[QName(
             self._ns.di_NAMESPACE,
             self._DOCUMENTATION_KEY)] = self._DOCUMENTATION_ATTR
         bpmn_diagram.attrib[QName(self._ns.di_NAMESPACE, self._RESOLUTION_KEY)
-        ] = self._RESOLUTION_ATTR
+                            ] = self._RESOLUTION_ATTR
         bpmn_diagram.attrib[QName(
             self._ns.xsi_NAMESPACE, self._TYPE_KEY)] = self._TYPE_ATTR
         bpmn_plane = etree.SubElement(
@@ -1794,7 +2026,7 @@ class BPMN:
         # Now add the shapes for the main flow
         plane_height, xcurr = self._append_shapes_and_edges(bpmn_plane)
         bounds_width = xcurr + self._WIDTH_START_EVENT + self._WIDTH_ARROW + \
-                       self._OFFSET_BOUNDS_WIDTH
+            self._OFFSET_BOUNDS_WIDTH
         etree.SubElement(
             bpmn_shape, self._ns.dc + self._BOUNDS_SUFFIX,
             x=str(self._X_SHAPE),
@@ -1839,13 +2071,14 @@ class BPMN:
         if self._process_steps is None:
             xml_string = ''
         else:
-            process = self._append_process_tree(definition_element, process_name)
+            process = self._append_process_tree(
+                definition_element, process_name)
             self._append_data_objects(process)
             self._append_collaboration(definition_element, process_name)
             bpmn_plane, plane_height, bounds_width \
                 = self._append_flow(definition_element, process_name)
-            x_doc_max, y_doc_max \
-                = self._append_data_object_shapes(bpmn_plane, plane_height, bounds_width)
+            x_doc_max, y_doc_max = self._append_data_object_shapes(
+                bpmn_plane, plane_height, bounds_width)
             b_elems = bpmn_plane.findall(
                 self._PLANE_FIND_ALL_QUERY, self._NAMESPACE)
             for b_elem in b_elems:
