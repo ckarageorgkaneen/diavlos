@@ -71,6 +71,8 @@ def handle_english_param(func):
             english = kwargs['english']
             if english:
                 default_site = english_site
+            else:
+                default_site = greek_site
         else:
             default_site = greek_site
         service.set_site(default_site)
