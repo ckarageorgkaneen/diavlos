@@ -24,6 +24,9 @@ PROCESS_NACE_DESCRIPTION_FIELD_NAME = 'process_nace_description'
 site = Site()
 site.login(auto=True)
 
+username = site._config['username']
+password = site._config['password']
+
 
 class ServiceError(Exception):
     """ServiceError exception"""
@@ -89,8 +92,7 @@ def changeNace(name, service):
             }
 
         x = requests.put(API_ENDPOINT + 'services/name/' + str(name) + '/update', json=newService,
-                             auth=('Master', '1T*X8@kix7sm'))
-        # print(x)
+                             auth=(username, password))
 
         if x.status_code != 200:
             print('Not Changed ', flush=True)
@@ -143,6 +145,3 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('pid', help='id of process or "all"')
     main(*vars(parser.parse_args()).values())
-
-# changeNace(754738)
-# deleteFields(754738)
