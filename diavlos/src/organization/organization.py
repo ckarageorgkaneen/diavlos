@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(level=logging.DEBUG)
 
 CATEGORY_PREFIX = '[[Category:'
+CATEGORY_STRING_TEMPLATE = f'{CATEGORY_PREFIX}{{}}]]'
 
 
 class OrganizationError(Exception):
@@ -30,6 +31,10 @@ class OrganizationError(Exception):
 def _error(message):
     logger.error(message)
     raise OrganizationError(message)
+
+
+def _category_string(string):
+    return CATEGORY_STRING_TEMPLATE.format(string)
 
 
 def _cli_command(func):
@@ -126,8 +131,8 @@ class Organization:
     # Mediawiki
     CATEGORY_NAME = 'Φορείς'
     CATALOGUE_CATEGORY_NAME = 'Κατάλογος Φορέων'
-    CATEGORY = f'[[Category:{CATEGORY_NAME}]]'
-    CATALOGUE_CATEGORY = f'[[Category:{CATALOGUE_CATEGORY_NAME}]]'
+    CATEGORY = _category_string(CATEGORY_NAME)
+    CATALOGUE_CATEGORY = _category_string(CATALOGUE_CATEGORY_NAME)
     NAMESPACE = 'Φορέας'
     NAMESPACE_NUMBER = 9000
     TEMPLATE_CONTACT_POINT_TELEPHONE = 'contactPoint_telephone'
@@ -385,7 +390,11 @@ class Organization:
         for page in self._site.categories[self.CATALOGUE_CATEGORY_NAME]:
             yield page
 
-    def _create_pages(self, name, parent_category=None):
+    def _create_page(self, name):
+        page = self._get_site_page(f'{self.NAMESPACE}:{name}')
+        _add_text_to_page(page, self.CATALOGUE_CATEGORY)
+
+    def _create_category_page(self, name, parent_category=None):
         if parent_category is None:
             parent_category = self.CATEGORY
             replace_text = None
@@ -394,11 +403,14 @@ class Organization:
         category_page = self._get_site_page(name, is_category=True)
         _add_text_to_page(category_page, parent_category,
                           replace_text=replace_text)
-        page = self._get_site_page(f'{self.NAMESPACE}:{name}')
-        _add_text_to_page(page, self.CATALOGUE_CATEGORY)
+
+    def _create(self, name, create_category=False, parent_category=None):
+        if create_category:
+            self._create_category_page(name, parent_category=parent_category)
+        self._create_page(name)
 
     @_cli_command
-    def recreate_tree(self, fetch_from_api=False):
+    def recreate_tree(self, fetch_from_api=False, create_categories=False):
         """Create new organization category tree and pages.
 
         Args:
@@ -408,11 +420,11 @@ class Organization:
         logger.debug('Creating organization category tree and pages...')
         for parent, children in self._hierarchy(
                 fetch_from_api=fetch_from_api).items():
-            self._create_pages(parent)
-            parent_category = f'[[Category:{parent}]]'
+            self._create(parent, create_category=create_categories)
+            category = _category_string(parent) if create_categories else None
             for child in children:
-                self._create_pages(
-                    child, parent_category=parent_category)
+                self._create(child, create_category=create_categories,
+                             parent_category=category)
         logger.debug('Done.')
 
     @_cli_command
