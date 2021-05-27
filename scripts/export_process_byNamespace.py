@@ -4,7 +4,6 @@ import csv
 
 from diavlos.src.site import Site
 from mwtemplates import TemplateEditor
-from diavlos.src.service import Service
 
 CSV_EXTENSION = '.csv'
 
@@ -16,16 +15,17 @@ TO_BE_PUBLISHED_NAMESPACE = 'ΠΔ'
 
 header_row = [
     'namespace',
+    'page_id',
     'process_uuid',
     'process_id',
     'process_official_title',
     'process_org_owner',
-    'process_source']
+    'process_source'
+]
 
 
-###
 # Extract
-def _service_dict(template_editor, ns=PUBLISHED_NAMESPACE):
+def _service_dict(template_editor, page_id, ns=PUBLISHED_NAMESPACE):
     tpl_instances_data = {}
 
     for tpl_name in template_editor.templates.keys():
@@ -34,7 +34,7 @@ def _service_dict(template_editor, ns=PUBLISHED_NAMESPACE):
         if tpl_name == 'Process':
             for tpl_idx, tpl_instance in enumerate(tpl_instances):
                 # print(tpl_instance.name)
-                tpl_instance_dict = {'namespace': ns}
+                tpl_instance_dict = {'namespace': ns, 'page_id': page_id}
                 for param in tpl_instance.parameters:
 
                     if param.name == 'process_uuid' or \
@@ -65,11 +65,11 @@ def main(outfile, namespace=PUBLISHED_NAMESPACE):
 
         for page in services_category:
             name = page.name
+            page_id = page._info['pageid']
             split_name = name.split(':')
             ns = split_name[0]
             if ns == namespace:  # print only selected Namespace
-                service_dict = _service_dict(TemplateEditor(page.text()), ns)
-                # print(service_dict)
+                service_dict = _service_dict(TemplateEditor(page.text()), page_id, ns)
                 csv_output.writerow(service_dict)
 
         f.close()
