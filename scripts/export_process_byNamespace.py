@@ -4,7 +4,6 @@ import csv
 
 from diavlos.src.site import Site
 from mwtemplates import TemplateEditor
-from diavlos.src.service import Service
 
 CSV_EXTENSION = '.csv'
 
@@ -25,7 +24,6 @@ header_row = [
 ]
 
 
-###
 # Extract
 def _service_dict(template_editor, page_id, ns=PUBLISHED_NAMESPACE):
     tpl_instances_data = {}

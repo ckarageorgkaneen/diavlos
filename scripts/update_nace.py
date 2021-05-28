@@ -14,15 +14,11 @@ DELETE_ME = 'DELETE_ME'
 PROCESS_NACE_CODE_FIELD_NAME = 'process_nace_code'
 PROCESS_NACE_DESCRIPTION_FIELD_NAME = 'process_nace_description'
 
-# process_namespaces = [
-#     '9002',  # ΔΔ
-#     '9006',  # ΥΕ
-#     '9008',  # ΠΕ
-#     '9010',  # ΠΔ
-# ]
-
 site = Site()
 site.login(auto=True)
+
+username = site._config['username']
+password = site._config['password']
 
 
 class ServiceError(Exception):
@@ -47,8 +43,6 @@ def checkIfExists(name):
     except KeyError:
         print('No nace_description in Process field for: ', service['name'], flush=True)
         return None
-
-
 
     return service
 
@@ -89,8 +83,7 @@ def changeNace(name, service):
             }
 
         x = requests.put(API_ENDPOINT + 'services/name/' + str(name) + '/update', json=newService,
-                             auth=('Master', '1T*X8@kix7sm'))
-        # print(x)
+                         auth=(username, password))
 
         if x.status_code != 200:
             print('Not Changed ', flush=True)
@@ -119,13 +112,9 @@ def main(name):
     site.login(auto=True)
 
     if name == "all":
-        # for ns in process_namespaces:
-        #     print('Namespace: ', ns, flush=True)
-        # for page in site._client.allpages(namespace=ns):
         pages = site.categories['Κατάλογος Διαδικασιών']
         for count, page in enumerate(pages):
             name = page.name
-            id_ = Service().get_id_by_fullname(name)
             service = checkIfExists(name)
             if service:
                 print(name, flush=True)
@@ -143,6 +132,3 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('pid', help='id of process or "all"')
     main(*vars(parser.parse_args()).values())
-
-# changeNace(754738)
-# deleteFields(754738)
