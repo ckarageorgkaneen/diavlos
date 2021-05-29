@@ -1,6 +1,7 @@
 """A module for simple file-related operations."""
 import os
 
+
 class DataUtil:
 
     def __init__(self, filepath):
