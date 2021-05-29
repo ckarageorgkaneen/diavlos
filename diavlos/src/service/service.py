@@ -71,7 +71,13 @@ class Service:
     def _has_namespace_prefix(self, string):
         return bool(re.match(self.REGEX_HAS_NAMESPACE_PREFIX, string))
 
-    def _service_dict(self, name, full_name, update_date, page_id, template_editor):
+    def _service_dict(
+            self,
+            name,
+            full_name,
+            update_date,
+            page_id,
+            template_editor):
         dict_ = {
             self.NAME_KEY: name,
             self.FULL_NAME_KEY: full_name,
@@ -252,11 +258,16 @@ class Service:
             page_name = page.page_title
             page_full_name = page.name
             current_revision = page.revisions(limit=1, dir='older').next()
-            latest_update_date=datetime.utcfromtimestamp(
+            latest_update_date = datetime.utcfromtimestamp(
                 mktime(current_revision['timestamp'])).isoformat()
-            page_id=page._info['pageid']
+            page_id = page._info['pageid']
             service_dict = self._service_dict(
-                page_name, page_full_name, latest_update_date, page_id, TemplateEditor(page.text()))
+                page_name,
+                page_full_name,
+                latest_update_date,
+                page_id,
+                TemplateEditor(
+                    page.text()))
             if fetch_bpmn_digital_steps is None:
                 data = service_dict
             else:
@@ -392,10 +403,17 @@ class Service:
                 page.edit(wikitext)
                 page_name = page.page_title
                 page_full_name = page.name
-                current_revision = page.revisions(limit=1,dir='older').next()
-                latest_update_date=datetime.utcfromtimestamp(mktime(current_revision['timestamp'])).isoformat()
-                page_id=page._info['pageid']
-                result = self._service_dict(page_name, page_full_name, latest_update_date, page_id, TemplateEditor(page.text()))
+                current_revision = page.revisions(limit=1, dir='older').next()
+                latest_update_date = datetime.utcfromtimestamp(
+                    mktime(current_revision['timestamp'])).isoformat()
+                page_id = page._info['pageid']
+                result = self._service_dict(
+                    page_name,
+                    page_full_name,
+                    latest_update_date,
+                    page_id,
+                    TemplateEditor(
+                        page.text()))
             else:
                 result = ErrorCode.NO_FIELD_UPDATED
         else:
@@ -429,10 +447,12 @@ class Service:
                 page.edit(te.wikitext())
                 page_name = page.page_title
                 page_full_name = page.name
-                current_revision = page.revisions(limit=1,dir='older').next()
-                latest_update_date=datetime.utcfromtimestamp(mktime(current_revision['timestamp'])).isoformat()
-                page_id=page._info['pageid']               
-                result = self._service_dict(page_name, page_full_name, latest_update_date, page_id, te)
+                current_revision = page.revisions(limit=1, dir='older').next()
+                latest_update_date = datetime.utcfromtimestamp(
+                    mktime(current_revision['timestamp'])).isoformat()
+                page_id = page._info['pageid']
+                result = self._service_dict(
+                    page_name, page_full_name, latest_update_date, page_id, te)
             else:
                 result = ErrorCode.INVALID_TEMPLATE
         return result
