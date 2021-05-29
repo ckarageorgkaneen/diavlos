@@ -36,16 +36,20 @@ def checkIfExists(name):
         processFields = service['fields']
         process_nace_code = processFields['Process'][1][PROCESS_NACE_CODE_FIELD_NAME]
     except KeyError:
-        print('No nace_code in Process field for: ', service['name'], flush=True)
+        print(
+            'No nace_code in Process field for: ',
+            service['name'],
+            flush=True)
         return None
 
     try:
         process_nace_description = processFields['Process'][1][PROCESS_NACE_DESCRIPTION_FIELD_NAME]
     except KeyError:
-        print('No nace_description in Process field for: ', service['name'], flush=True)
+        print(
+            'No nace_description in Process field for: ',
+            service['name'],
+            flush=True)
         return None
-
-
 
     return service
 
@@ -61,7 +65,10 @@ def changeNace(name, service):
         try:
             process_nace_description = processFields['Process'][1][PROCESS_NACE_DESCRIPTION_FIELD_NAME]
         except KeyError:
-            print('No process_nace_description for', service['name'], flush=True)
+            print(
+                'No process_nace_description for',
+                service['name'],
+                flush=True)
             return KeyError
 
         # if nace_code migration exists
@@ -73,20 +80,30 @@ def changeNace(name, service):
 
             newService = {
                 'process': {
-                    "1": {PROCESS_NACE_CODE_FIELD_NAME: DELETE_ME, PROCESS_NACE_DESCRIPTION_FIELD_NAME: DELETE_ME}
-                }
-            }
+                    "1": {
+                        PROCESS_NACE_CODE_FIELD_NAME: DELETE_ME,
+                        PROCESS_NACE_DESCRIPTION_FIELD_NAME: DELETE_ME}}}
 
         except KeyError:
             newService = {
                 'process': {
-                    "1": {PROCESS_NACE_CODE_FIELD_NAME: DELETE_ME, PROCESS_NACE_DESCRIPTION_FIELD_NAME: DELETE_ME}},
-                'process_nace': {"1": {PROCESS_NACE_CODE_FIELD_NAME: process_nace_code,
-                                       PROCESS_NACE_DESCRIPTION_FIELD_NAME: process_nace_description}}
-            }
+                    "1": {
+                        PROCESS_NACE_CODE_FIELD_NAME: DELETE_ME,
+                        PROCESS_NACE_DESCRIPTION_FIELD_NAME: DELETE_ME}},
+                'process_nace': {
+                    "1": {
+                        PROCESS_NACE_CODE_FIELD_NAME: process_nace_code,
+                        PROCESS_NACE_DESCRIPTION_FIELD_NAME: process_nace_description}}}
 
-        x = requests.put(API_ENDPOINT + 'services/name/' + str(name) + '/update', json=newService,
-                             auth=(username, password))
+        x = requests.put(
+            API_ENDPOINT +
+            'services/name/' +
+            str(name) +
+            '/update',
+            json=newService,
+            auth=(
+                username,
+                password))
 
         if x.status_code != 200:
             print('Not Changed ', flush=True)
