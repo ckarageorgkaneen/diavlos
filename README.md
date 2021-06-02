@@ -28,3 +28,18 @@ cd scripts
 ```bash
 http://localhost:5000/v1/ui/
 ```
+
+## Docker
+
+Build the image using:
+
+```bash
+docker-compose build
+```
+
+After setting the credentials as described above, execute the service using:
+
+```bash
+docker-compose up
+```
+

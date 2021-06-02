@@ -1,0 +1,7 @@
+make
+diavlos.egg-info
+node_modules
+.gitignore
+package-lock.json
+README.md
+__pycache__
