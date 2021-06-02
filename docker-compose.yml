@@ -1,0 +1,10 @@
+version: '3'
+services:
+  web:
+    image: diavlosapi
+    build: ./
+    restart: always
+    ports:
+      - "5000"
+    volumes:
+      - ${PWD}/diavlos/data/in:/app/diavlos/data/in:rw    
