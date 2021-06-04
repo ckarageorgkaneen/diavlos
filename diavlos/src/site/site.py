@@ -19,7 +19,7 @@ def _error(message):
 
 
 class Site:
-    _DEFAULT_CONFIG_FILE = IN_FILES['greek_site_config']
+    _DEFAULT_CONFIG_FILE = IN_FILES['english_site_config']
     _DEFAULT_SCHEME = 'https'
     _DEFAULT_PATH = '/'
 

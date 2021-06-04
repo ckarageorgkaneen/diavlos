@@ -2,10 +2,12 @@
 from the apografi API to the diavlos site.
 """
 import inspect
+import json
 import logging
 import pickle
 import re
 import requests
+from mwclient.errors import APIError
 
 from mwtemplates import TemplateEditor
 
@@ -111,6 +113,17 @@ def _dict_from_api_endpoint(endpoint):
         datum['id']: datum['description']
         for datum in requests.get(endpoint).json()['data']
     }
+
+
+def _fetch_english_title(greek):
+    url = "https://reg-diavlos.gov.gr/fields/organisations.php?org=" + greek
+
+    x = requests.get(url)
+
+    json_data = json.loads(x.text)
+    if json_data:
+        english_name = json_data['title_en']
+        return english_name
 
 
 class Organization:
@@ -515,6 +528,18 @@ class Organization:
                 new_template_text = template_text(org_details)
                 new_page_text = f'{new_template_text}\n{page_text_leftovers}'
                 page.edit(new_page_text)
+
+                # Replace english title if site = english
+                site = self.__site._DEFAULT_CONFIG_FILE
+                if "english" in site:
+                    try:
+                        title_gr = page.name.split(':')[1]
+                        if title_gr:
+                            title_en = _fetch_english_title(title_gr)
+                            page.move(title_en, reason="English Translation", no_redirect=True)
+                    except APIError:
+                        pass
+
                 logger.debug(f'{page.name} updated')
         logger.debug('Done.')
 
