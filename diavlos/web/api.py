@@ -67,12 +67,7 @@ def handle_english_param(func):
     def wrapper(*args, **kwargs):
         global default_site
 
-        if 'english' in kwargs:
-            english = kwargs['english']
-            if english:
-                default_site = english_site
-        else:
-            default_site = greek_site
+        default_site = english_site if kwargs.get('english') else greek_site
         service.set_site(default_site)
         return func(*args, **kwargs)
     return wrapper
