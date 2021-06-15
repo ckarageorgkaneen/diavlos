@@ -22,7 +22,8 @@ for answer in site._client.ask(query):
 
     exists = False
 
-    if text.find(process_evidence_step_digital_total_numberROW) != -1 or text.find(process_steps_digitalROW) != -1:
+    if text.find(process_evidence_step_digital_total_numberROW) != - \
+            1 or text.find(process_steps_digitalROW) != -1:
 
         page.edit(page.text().replace(
             process_total_duration_steps_digital_minROW, ""
