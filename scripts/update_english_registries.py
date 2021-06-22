@@ -34,9 +34,12 @@ for page in site._client.allpages(namespace='9004'):
         rowToChange = page_text[index:new_lineIndex]
         greek_registry_org_main = page_text[index + rowLen:new_lineIndex]
 
-        english_registry_org_main = _fetch_english_title(greek_registry_org_main)
+        english_registry_org_main = _fetch_english_title(
+            greek_registry_org_main)
         if english_registry_org_main is not None:
-            newRow = rowToChange.replace(greek_registry_org_main, english_registry_org_main)
+            newRow = rowToChange.replace(
+                greek_registry_org_main,
+                english_registry_org_main)
 
             if page_text.find(rowToChange) != -1:
                 page.edit(page_text.replace(
