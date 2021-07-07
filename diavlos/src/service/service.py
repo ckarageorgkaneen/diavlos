@@ -259,7 +259,7 @@ class Service:
                 data = BPMN(
                     digital_steps=fetch_bpmn_digital_steps).xml(
                     service_dict).replace('\n', '').replace(
-                    '\t', '')
+                    '\t', '').replace('\"', '"')
 
             # data = {**data, **{"update":latest_update_date,"page_id":page_id}}
             # data = {'data': data, "update":latest_update_date,"page_id":page_id}
