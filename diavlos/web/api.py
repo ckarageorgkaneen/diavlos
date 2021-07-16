@@ -13,7 +13,8 @@ from diavlos.data import IN_FILES
 from diavlos.src.eparavolo import eParavolo
 from diavlos.src.eparavolo.error import eParavoloErrorCode
 from diavlos.src.eparavolo.error import eParavoloErrorData
-from diavlos.src.diaugeia.error import DiaugeiaErrorCode, DiaugeiaErrorData
+from diavlos.src.diaugeia.error import DiaugeiaErrorCode
+from diavlos.src.diaugeia.error import DiaugeiaErrorData
 from diavlos.src.helper.error import ErrorCode
 from diavlos.src.metadata import Metadata
 from diavlos.src.diaugeia import Diaugeia
