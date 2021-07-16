@@ -11,29 +11,6 @@ API_BASE_URL = "https://diavgeia.gov.gr/opendata"
 API_TEST_URL = "https://test3.diavgeia.gov.gr/luminapi/opendata/decisions/"
 
 
-class DiaugeiaError(Exception):
-    """diaugeiaError exception"""
-
-
-def _error(message):
-    logger.error(message)
-    raise DiaugeiaError(message)
-
-
-def _request_data(code):
-    try:
-        r = requests.get(API_TEST_URL + code + '.json')
-        result = r.json()
-
-        if 'errors' in result:
-            return None
-        else:
-            return result
-
-    except ConnectionError:
-        return None
-
-
 class Diaugeia:
 
     def fetch(self, code):
@@ -47,10 +24,11 @@ class Diaugeia:
                     enum, if an ada for the code is not found.
                 dict: ada information
         """
-        response_dict = _request_data(code)
-        if response_dict is None:
+        resource = f'{API_TEST_URL}{code}.json'
+        try:
+            response = requests.get(resource).json()
+        except ConnectionError:
             result = ErrorCode.NOT_FOUND
         else:
-            result = response_dict
-
+            result = ErrorCode.NOT_FOUND if 'errors' in response else response
         return result
