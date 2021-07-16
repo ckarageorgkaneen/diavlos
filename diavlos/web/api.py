@@ -13,8 +13,11 @@ from diavlos.data import IN_FILES
 from diavlos.src.eparavolo import eParavolo
 from diavlos.src.eparavolo.error import eParavoloErrorCode
 from diavlos.src.eparavolo.error import eParavoloErrorData
+from diavlos.src.diaugeia.error import DiaugeiaErrorCode
+from diavlos.src.diaugeia.error import DiaugeiaErrorData
 from diavlos.src.helper.error import ErrorCode
 from diavlos.src.metadata import Metadata
+from diavlos.src.diaugeia import Diaugeia
 from diavlos.src.organization import Organization
 from diavlos.src.service import Service
 from diavlos.src.service.error import ServiceErrorData
@@ -29,6 +32,7 @@ service = Service(site=default_site)
 eparavolo = eParavolo()
 organization = Organization()
 metadata = Metadata()
+diaugeia = Diaugeia()
 
 
 def make_response(func):
@@ -44,6 +48,8 @@ def make_response(func):
         elif isinstance(result, ErrorCode):
             if isinstance(result, eParavoloErrorCode):
                 error_handler = eParavoloErrorData
+            elif isinstance(result, DiaugeiaErrorCode):
+                error_handler = DiaugeiaErrorData
             else:
                 error_handler = ServiceErrorData
             message, status_code = error_handler(result)
@@ -173,6 +179,11 @@ def update_metadata(uuid, type):
         return metadata.read(uuid, type)
     else:
         return 'Δεν ενημερώθηκαν μεταδεδομένα.'
+
+
+@make_response
+def get_ada(code):
+    return diaugeia.fetch(code)
 
 
 app = connexion.App(__name__)

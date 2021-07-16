@@ -243,6 +243,22 @@ paths:
       responses:
         '200':
           description: Success
+  /diaugeia/{code}:
+    get:
+      tags:
+        - ada
+      summary: Get ada from DIAUGEIA API information by code
+      operationId: api.get_ada
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+          example: ΒΧ3ΚΡΩ2-ΦΝΛ
+      responses:
+        '200':
+          description: Success
   /paravolo/{code}:
     get:
       tags:
