@@ -193,15 +193,16 @@ class Service:
                 services_data = [{
                     "name": category_member['title'].replace(
                         self.DEFAULT_NAMESPACE_PREFIX, ''),
-                    "info":self.fetch_by_name(category_member['title'])}
+                    "info": self.fetch_by_name(category_member['title'])}
                     for category_member in mw_response['query'][
                         'categorymembers']
                 ]
+
             else:
                 services_data = [{
                     "name": category_member['title'].replace(
                         self.DEFAULT_NAMESPACE_PREFIX, ''),
-                    "id":self.get_id_by_fullname(category_member['title'])}
+                    "id": self.get_id_by_fullname(category_member['title'])}
                     for category_member in mw_response['query'][
                         'categorymembers']
                 ]
@@ -429,4 +430,46 @@ class Service:
                 result = self._service_dict(page_name, page_full_name, te)
             else:
                 result = ErrorCode.INVALID_TEMPLATE
+        return result
+
+    def search(self, params, offset=0, limit=0):
+        """Fetch all services.
+
+            Args:
+                params (string): The parameters for query.
+                limit (int): The max number of services to return (mediawiki
+                        parameter).
+                offset (int): A pagination string for accessing the
+                        next result page (mediawiki parameter).
+
+            Returns:
+                dict: The services to return.
+        """
+
+        askargs_conditions = f'Category:Κατάλογος Διαδικασιών|{params}'
+        parameters = ''
+        if limit != 0:
+            parameters = parameters + f'|limit={limit}'
+        if offset != 0:
+            parameters = parameters + f'|offset={offset}'
+        try:
+            mw_response = self._site.get(
+                'askargs', format='json',
+                api_version=3,
+                conditions=askargs_conditions,
+                parameters=parameters
+            )
+        except mwclient.errors.APIError:
+            result = ErrorCode.SITE_API_ERROR
+        else:
+            if 'continue' in mw_response:
+                continue_response = mw_response['continue']['cmcontinue']
+            else:
+                continue_response = None
+
+            result = {
+                'mw_response': mw_response,
+                'page_continue': continue_response,
+            }
+
         return result

@@ -194,6 +194,35 @@ paths:
       responses:
         '200':
           description: Success
+
+  /services/search:
+    get:
+      tags:
+        - services
+      summary: Search for property in services
+      description: Search for property in services
+      operationId: api.search_services
+      parameters:
+        - name: params
+          in: query
+          description: Parameters
+          schema:
+            type: string
+          example: 'Process source::EU-GO'
+        - name: offset
+          in: query
+          description: Pagination key for continuing to the next results page
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: Max limit of services to get, if 0 fetch all
+          schema:
+            type: integer
+          example: 50
+      responses:
+        '200':
+          description: Success
   /services/uuid/{uuid}/update:
     put:
       security:

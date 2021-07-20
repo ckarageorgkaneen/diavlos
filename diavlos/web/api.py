@@ -98,6 +98,9 @@ def site_login(username, password, required_scopes=None):
 def get_all_services(include_info=False, page_continue='', limit=10):
     return service.fetch_all(include_info, page_continue, limit)
 
+@make_response
+def search_services(params, offset=0, limit=0):
+    return service.search(params, offset, limit)
 
 @make_response
 @handle_english_param
