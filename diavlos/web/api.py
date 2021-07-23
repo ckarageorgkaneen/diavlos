@@ -99,8 +99,9 @@ def get_all_services(include_info=False, page_continue='', limit=10):
     return service.fetch_all(include_info, page_continue, limit)
 
 @make_response
-def search_services(params, offset=0, limit=0):
-    return service.search(params, offset, limit)
+@handle_english_param
+def search_services(params, namespace='ΔΔ', offset=0, limit=0):
+    return service.search(params, namespace, offset, limit)
 
 @make_response
 @handle_english_param

@@ -205,10 +205,16 @@ paths:
       parameters:
         - name: params
           in: query
-          description: Parameters
+          description: Parameters etc Process source::EU-GO ή Process org owner::Φορέας:ΥΠΟΥΡΓΕΙΟ ΨΗΦΙΑΚΗΣ ΔΙΑΚΥΒΕΡΝΗΣΗΣ
           schema:
             type: string
           example: 'Process source::EU-GO'
+        - name: namespace
+          in: query
+          description: Namespace
+          schema:
+            type: string
+          example: 'ΔΔ'
         - name: offset
           in: query
           description: Pagination key for continuing to the next results page
@@ -216,7 +222,7 @@ paths:
             type: integer
         - name: limit
           in: query
-          description: Max limit of services to get, if 0 fetch all
+          description: Limit of services to get
           schema:
             type: integer
           example: 50

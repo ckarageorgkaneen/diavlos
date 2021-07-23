@@ -432,11 +432,12 @@ class Service:
                 result = ErrorCode.INVALID_TEMPLATE
         return result
 
-    def search(self, params, offset=0, limit=0):
-        """Fetch all services.
+    def search(self, params='', ns=PUBLISHED_NAMESPACE, offset=0, limit=0):
+        """Search for services.
 
             Args:
                 params (string): The parameters for query.
+                ns (string): Namespace, default is ΔΔ
                 limit (int): The max number of services to return (mediawiki
                         parameter).
                 offset (int): A pagination string for accessing the
@@ -446,7 +447,7 @@ class Service:
                 dict: The services to return.
         """
 
-        askargs_conditions = f'Category:Κατάλογος Διαδικασιών|{params}'
+        askargs_conditions = f'Process ns::{ns}|Category:Κατάλογος Διαδικασιών|{params}'
         parameters = ''
         if limit != 0:
             parameters = parameters + f'|limit={limit}'
@@ -457,18 +458,19 @@ class Service:
                 'askargs', format='json',
                 api_version=3,
                 conditions=askargs_conditions,
-                parameters=parameters
+                parameters=parameters,
+                printouts='Process id'
             )
         except mwclient.errors.APIError:
             result = ErrorCode.SITE_API_ERROR
         else:
-            if 'continue' in mw_response:
-                continue_response = mw_response['continue']['cmcontinue']
+            if 'query-continue-offset' in mw_response:
+                continue_response = mw_response['query-continue-offset']
             else:
                 continue_response = None
 
             result = {
-                'mw_response': mw_response,
+                'mw_response': mw_response['query']['results'],
                 'page_continue': continue_response,
             }
 
