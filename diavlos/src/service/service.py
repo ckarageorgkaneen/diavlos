@@ -179,7 +179,7 @@ class Service:
         try:
             mw_response = self._site.get('query', format='json',
                                          list='categorymembers',
-                                         cmtitle=self.CATEGORY,
+                                         cmtitle=self.CATEGORY + '|' + self.PUBLISHED_NAMESPACE,
                                          cmcontinue=page_continue,
                                          cmlimit=limit)
         except mwclient.errors.APIError:
@@ -444,6 +444,8 @@ class Service:
                         next result page (mediawiki parameter).
 
             Returns:
+                :obj:`enum 'ServiceErrorCode'`: A ServiceErrorCode enum for cases
+                    such as if the service was not found, etc.
                 dict: The services to return.
         """
 
