@@ -24,7 +24,7 @@ class Diaugeia:
                     enum, if an ada for the code is not found.
                 dict: ada information
         """
-        resource = f'{API_TEST_URL}{code}.json'
+        resource = f'{API_BASE_URL}{code}.json'
         try:
             response = requests.get(resource).json()
         except ConnectionError:
