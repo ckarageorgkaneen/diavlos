@@ -4,10 +4,11 @@ import logging
 import requests
 
 from .error import DiaugeiaErrorCode as ErrorCode
+from json import JSONDecodeError
 
 logger = logging.getLogger(__name__)
 
-API_BASE_URL = "https://diavgeia.gov.gr/opendata"
+API_BASE_URL = "https://www.diavgeia.gov.gr/luminapi/opendata/decisions/"
 API_TEST_URL = "https://test3.diavgeia.gov.gr/luminapi/opendata/decisions/"
 
 
@@ -27,7 +28,7 @@ class Diaugeia:
         resource = f'{API_BASE_URL}{code}.json'
         try:
             response = requests.get(resource).json()
-        except ConnectionError:
+        except ConnectionError or JSONDecodeError:
             result = ErrorCode.NOT_FOUND
         else:
             result = ErrorCode.NOT_FOUND if 'errors' in response else response
