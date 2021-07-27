@@ -57,40 +57,44 @@ for template in templates:
     update_schema_template_properties = update_schema_property_object[
         'additionalProperties']['properties']
     for field in template[FIELD_KEY]:
-        field_name = field[TAG_NAME_KEY]
-        field_type = field[PAGEFORMS_FORM_INPUT_KEY][INPUT_TYPE_KEY]
-        field_smw_property = field[SMW_PROPERTY_KEY]
-        if field_type.startswith(TEXT_STR):
-            add_schema_template_properties[field_name] = deepcopy(
-                JSON_SCHEMA_STR_TYPE)
-            update_schema_template_properties[field_name] = deepcopy(
-                JSON_SCHEMA_STR_TYPE)
-        elif field_type == DROPDOWN_STR:
-            enum_obj = deepcopy(JSON_SCHEMA_ENUM_TYPE)
-            if ALLOWED_VALUE_KEY in field_smw_property:
-                dropdown_items = field_smw_property[ALLOWED_VALUE_KEY]
-                enum_obj['enum'] = dropdown_items
-                add_schema_template_properties[field_name] = enum_obj
-                update_schema_template_properties[field_name] = enum_obj
-            else:
+        try:
+            field_name = field[TAG_NAME_KEY]
+            field_type = field[PAGEFORMS_FORM_INPUT_KEY][INPUT_TYPE_KEY]
+            field_smw_property = field[SMW_PROPERTY_KEY]
+        except KeyError:
+            continue
+        else:
+            if field_type.startswith(TEXT_STR):
                 add_schema_template_properties[field_name] = deepcopy(
                     JSON_SCHEMA_STR_TYPE)
                 update_schema_template_properties[field_name] = deepcopy(
                     JSON_SCHEMA_STR_TYPE)
-        elif field_type == TOKENS_STR:
-            new_array_obj = deepcopy(JSON_SCHEMA_ARRAY_TYPE)
-            enum_obj = deepcopy(JSON_SCHEMA_ENUM_TYPE)
-            if ALLOWED_VALUE_KEY in field_smw_property:
-                dropdown_items = field_smw_property[ALLOWED_VALUE_KEY]
-                enum_obj['enum'] = dropdown_items
-                new_array_obj['items'] = enum_obj
-                add_schema_template_properties[field_name] = new_array_obj
-                update_schema_template_properties[field_name] = new_array_obj
-            else:
-                add_schema_template_properties[field_name] = deepcopy(
-                    JSON_SCHEMA_STR_TYPE)
-                update_schema_template_properties[field_name] = deepcopy(
-                    JSON_SCHEMA_STR_TYPE)
+            elif field_type == DROPDOWN_STR:
+                enum_obj = deepcopy(JSON_SCHEMA_ENUM_TYPE)
+                if ALLOWED_VALUE_KEY in field_smw_property:
+                    dropdown_items = field_smw_property[ALLOWED_VALUE_KEY]
+                    enum_obj['enum'] = dropdown_items
+                    add_schema_template_properties[field_name] = enum_obj
+                    update_schema_template_properties[field_name] = enum_obj
+                else:
+                    add_schema_template_properties[field_name] = deepcopy(
+                        JSON_SCHEMA_STR_TYPE)
+                    update_schema_template_properties[field_name] = deepcopy(
+                        JSON_SCHEMA_STR_TYPE)
+            elif field_type == TOKENS_STR:
+                new_array_obj = deepcopy(JSON_SCHEMA_ARRAY_TYPE)
+                enum_obj = deepcopy(JSON_SCHEMA_ENUM_TYPE)
+                if ALLOWED_VALUE_KEY in field_smw_property:
+                    dropdown_items = field_smw_property[ALLOWED_VALUE_KEY]
+                    enum_obj['enum'] = dropdown_items
+                    new_array_obj['items'] = enum_obj
+                    add_schema_template_properties[field_name] = new_array_obj
+                    update_schema_template_properties[field_name] = new_array_obj
+                else:
+                    add_schema_template_properties[field_name] = deepcopy(
+                        JSON_SCHEMA_STR_TYPE)
+                    update_schema_template_properties[field_name] = deepcopy(
+                        JSON_SCHEMA_STR_TYPE)
     service_add_schema['properties'][template_name] = add_schema_array_obj
     service_update_schema['properties'][template_name] = \
         update_schema_property_object
