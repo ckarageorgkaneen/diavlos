@@ -1895,8 +1895,8 @@ class BPMN:
             offsets_plain = self._get_grid_width(grid)
             offsets_flat = [sum(row) for row in offsets_plain]
             xcurr += max(offsets_flat)
-        # else:
-        #     print('Check This Too!!')
+        else:
+            return 0, 0
 
         plane_height = max(plane_height, branch_height, max(rounded_heights))
 
