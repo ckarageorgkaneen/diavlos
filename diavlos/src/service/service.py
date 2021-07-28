@@ -179,7 +179,7 @@ class Service:
         try:
             mw_response = self._site.get('query', format='json',
                                          list='categorymembers',
-                                         cmtitle=self.CATEGORY + '|' + self.PUBLISHED_NAMESPACE,
+                                         cmtitle=self.CATEGORY,
                                          cmcontinue=page_continue,
                                          cmlimit=limit)
         except mwclient.errors.APIError:
