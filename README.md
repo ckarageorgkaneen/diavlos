@@ -1,3 +1,5 @@
+### This project is deprecated. The diavlos (now known as [mitos](https://mitos.gov.gr)) API is now a private repository.
+
 # diavlos
 
 <p align="center"> <img src="resources/logo.jpg?raw=true"/> </p>
